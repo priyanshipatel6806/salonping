@@ -81,7 +81,7 @@ export default async function AppointmentsPage() {
                         {new Date(apt.scheduled_at).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })}
                       </div>
                       <div className="text-xs text-gray-400">
-                        {new Date(apt.scheduled_at).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(apt.scheduled_at).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Toronto' })}
                       </div>
                     </td>
                     <td className="px-6 py-4">

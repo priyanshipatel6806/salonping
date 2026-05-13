@@ -137,7 +137,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-gray-700">
-                      {new Date(apt.scheduled_at).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(apt.scheduled_at).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Toronto' })}
                     </span>
                     <span className="px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
                       confirmed
