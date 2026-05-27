@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase-server'
-import { sendSMS } from '@/lib/twilio'
+import { sendSMS, sendWhatsApp } from '@/lib/twilio'
 import { sendEmail, get48hEmailHtml, get24hEmailHtml, get2hEmailHtml } from '@/lib/resend'
 import { get48hMessage, get24hMessage, get2hMessage } from '@/lib/sms-templates'
 import { format } from 'date-fns'
@@ -119,7 +119,6 @@ export async function processReminders() {
         }).eq('id', reminder.id)
 
       } else if (channel === 'whatsapp') {
-        // WhatsApp coming soon — fall back to SMS for now
         let message = ''
         if (reminder.reminder_type === '48h') {
           message = get48hMessage(
@@ -141,7 +140,7 @@ export async function processReminders() {
             salon.name
           )
         }
-        const { sid } = await sendSMS(apt.client_phone, message)
+        const { sid } = await sendWhatsApp(apt.client_phone, message)
         await supabase.from('reminders').update({
           status: 'sent',
           sent_at: now.toISOString(),
