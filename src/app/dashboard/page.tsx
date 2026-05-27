@@ -121,7 +121,7 @@ export default async function DashboardPage() {
                   {process.env.NEXT_PUBLIC_APP_URL}/book/{bookingSettings.slug}
                 </code>
               </div>
-              
+              <a
                 href={`${process.env.NEXT_PUBLIC_APP_URL}/book/${bookingSettings.slug}`}
                 target="_blank"
                 className="text-white text-sm px-4 py-2 rounded-xl font-medium hover:opacity-90 transition-all"
@@ -139,7 +139,7 @@ export default async function DashboardPage() {
               <h2 className="font-bold text-gray-900">Today's Appointments</h2>
               <p className="text-xs text-gray-400 mt-0.5">{todayAppointments?.length || 0} appointments scheduled</p>
             </div>
-            
+            <a
               href="/appointments/new"
               className="text-white text-sm px-4 py-2 rounded-xl font-medium transition-all hover:opacity-90"
               style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
@@ -183,7 +183,7 @@ export default async function DashboardPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-1">No appointments today</h3>
               <p className="text-gray-400 text-sm mb-4">Add your first appointment to get started</p>
-              
+               <a
                 href="/appointments/new"
                 className="inline-block text-white text-sm px-5 py-2.5 rounded-xl font-medium hover:opacity-90 transition-all"
                 style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
