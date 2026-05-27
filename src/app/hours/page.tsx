@@ -70,6 +70,7 @@ export default function HoursPage() {
             <a href="/appointments" className="text-blue-200 hover:text-white text-sm transition-colors">Appointments</a>
             <a href="/services" className="text-blue-200 hover:text-white text-sm transition-colors">Services</a>
             <a href="/settings" className="text-blue-200 hover:text-white text-sm transition-colors">Settings</a>
+            <a href="/customise" className="text-blue-200 hover:text-white text-sm transition-colors">Customise</a>
           </div>
         </div>
       </nav>

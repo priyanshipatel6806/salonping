@@ -57,6 +57,7 @@ export default async function DashboardPage() {
             <a href="/hours" className="text-blue-200 hover:text-white text-sm transition-colors">Hours</a>
             <a href="/settings" className="text-blue-200 hover:text-white text-sm transition-colors">Settings</a>
             <a href="/appointments/new" className="bg-blue-500 hover:bg-blue-400 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors">
+            <a href="/customise" className="text-blue-200 hover:text-white text-sm transition-colors">Customise</a>
               + New
             </a>
           </div>

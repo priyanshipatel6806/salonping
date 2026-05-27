@@ -84,6 +84,7 @@ export default function ServicesPage() {
             <a href="/services" className="text-blue-200 hover:text-white text-sm transition-colors">Services</a>
             <a href="/hours" className="text-blue-200 hover:text-white text-sm transition-colors">Hours</a>
             <a href="/settings" className="text-blue-200 hover:text-white text-sm transition-colors">Settings</a>
+            <a href="/customise" className="text-blue-200 hover:text-white text-sm transition-colors">Customise</a>
           </div>
         </div>
       </nav>

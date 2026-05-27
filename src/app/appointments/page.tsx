@@ -28,6 +28,7 @@ export default async function AppointmentsPage() {
             <a href="/dashboard" className="text-blue-200 hover:text-white text-sm transition-colors">Dashboard</a>
             <a href="/services" className="text-blue-200 hover:text-white text-sm transition-colors">Services</a>
             <a href="/settings" className="text-blue-200 hover:text-white text-sm transition-colors">Settings</a>
+            <a href="/customise" className="text-blue-200 hover:text-white text-sm transition-colors">Customise</a>
             <a href="/appointments/new" className="bg-blue-500 hover:bg-blue-400 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors">
               + New
             </a>
