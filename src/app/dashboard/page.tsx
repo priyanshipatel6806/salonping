@@ -33,15 +33,9 @@ export default async function DashboardPage() {
   const { data: reminders } = await supabase
     .from('reminders').select('id').eq('status', 'sent')
 
-  const { data: allAppointments } = await supabase
-    .from('appointments').select('id')
-    .eq('salon_id', salon?.id)
-    .eq('status', 'no_show')
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav style={{background: 'linear-gradient(135deg, #0f172a, #1e3a5f)'}} className="px-6 py-4">
+      <nav style={{background:'linear-gradient(135deg,#0f172a,#1e3a5f)'}} className="px-6 py-4">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
@@ -51,6 +45,7 @@ export default async function DashboardPage() {
           </div>
           <div className="flex items-center gap-6">
             <a href="/appointments" className="text-blue-200 hover:text-white text-sm transition-colors">Appointments</a>
+            <a href="/services" className="text-blue-200 hover:text-white text-sm transition-colors">Services</a>
             <a href="/settings" className="text-blue-200 hover:text-white text-sm transition-colors">Settings</a>
             <a href="/appointments/new" className="bg-blue-500 hover:bg-blue-400 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors">
               + New
@@ -60,7 +55,6 @@ export default async function DashboardPage() {
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">
             Good {getGreeting()}, {salon?.name} 👋
@@ -70,7 +64,6 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-5 mb-8">
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
@@ -85,7 +78,7 @@ export default async function DashboardPage() {
 
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-500">SMS This Month</span>
+              <span className="text-sm font-medium text-gray-500">Reminders This Month</span>
               <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
                 <span className="text-base">💬</span>
               </div>
@@ -96,7 +89,7 @@ export default async function DashboardPage() {
 
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-500">Total SMS Sent</span>
+              <span className="text-sm font-medium text-gray-500">Total Reminders</span>
               <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
                 <span className="text-base">📊</span>
               </div>
@@ -106,7 +99,6 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Today's appointments */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100">
             <div>
@@ -116,7 +108,7 @@ export default async function DashboardPage() {
             <a
               href="/appointments/new"
               className="text-white text-sm px-4 py-2 rounded-xl font-medium transition-all hover:opacity-90"
-              style={{background: 'linear-gradient(135deg, #1e3a5f, #2563eb)'}}
+              style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
             >
               + Add appointment
             </a>
@@ -127,7 +119,7 @@ export default async function DashboardPage() {
               {todayAppointments.map((apt) => (
                 <div key={apt.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{background: 'linear-gradient(135deg, #1e3a5f, #2563eb)'}}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}>
                       {apt.client_name.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -137,7 +129,11 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-gray-700">
-                      {new Date(apt.scheduled_at).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Toronto' })}
+                      {new Date(apt.scheduled_at).toLocaleTimeString('en-CA', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: 'America/Toronto'
+                      })}
                     </span>
                     <span className="px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
                       confirmed
@@ -153,10 +149,10 @@ export default async function DashboardPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-1">No appointments today</h3>
               <p className="text-gray-400 text-sm mb-4">Add your first appointment to get started</p>
-                <a
+              <a
                 href="/appointments/new"
                 className="inline-block text-white text-sm px-5 py-2.5 rounded-xl font-medium hover:opacity-90 transition-all"
-                style={{background: 'linear-gradient(135deg, #1e3a5f, #2563eb)'}}
+                style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
               >
                 + Add appointment
               </a>
