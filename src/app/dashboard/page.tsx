@@ -46,6 +46,7 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-6">
             <a href="/appointments" className="text-blue-200 hover:text-white text-sm transition-colors">Appointments</a>
             <a href="/services" className="text-blue-200 hover:text-white text-sm transition-colors">Services</a>
+            <a href="/hours" className="text-blue-200 hover:text-white text-sm transition-colors">Hours</a>
             <a href="/settings" className="text-blue-200 hover:text-white text-sm transition-colors">Settings</a>
             <a href="/appointments/new" className="bg-blue-500 hover:bg-blue-400 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors">
               + New
