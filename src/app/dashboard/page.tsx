@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { createServiceClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
@@ -17,7 +18,8 @@ export default async function DashboardPage() {
     salon = newSalon
   }
 
-  const { data: bookingSettings } = await supabase
+  const serviceClient = createServiceClient()
+  const { data: bookingSettings } = await serviceClient
     .from('booking_settings')
     .select('slug')
     .eq('salon_id', salon?.id)
@@ -106,7 +108,6 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Booking page link */}
         {bookingSettings && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-5 mb-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -132,7 +133,6 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Today's appointments */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100">
             <div>
