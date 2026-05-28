@@ -104,16 +104,32 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     const scheduled_at = new Date(
       `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}T${selectedSlot.time}:00`
     ).toISOString()
-    await supabase.from('appointments').insert({
+    const { data: newApt } = await supabase.from('appointments').insert({
+  salon_id: salon.salon_id,
+  client_name: form.name,
+  client_phone: form.phone,
+  client_email: form.email,
+  service: selectedService.name,
+  scheduled_at,
+  reminder_channel: form.reminder_channel,
+  booked_online: true,
+}).select().single()
+
+// Notify salon owner
+if (newApt) {
+  await fetch('/api/notify-owner', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       salon_id: salon.salon_id,
       client_name: form.name,
       client_phone: form.phone,
-      client_email: form.email,
       service: selectedService.name,
       scheduled_at,
-      reminder_channel: form.reminder_channel,
-      booked_online: true,
-    })
+      appointment_id: newApt.id,
+    }),
+  })
+}
     setBooking(false)
     setBooked(true)
   }
