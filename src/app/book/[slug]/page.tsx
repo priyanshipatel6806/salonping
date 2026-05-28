@@ -1,4 +1,5 @@
 'use client'
+import ChatWidget from './chat-widget'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { ChevronLeft, ChevronRight, Clock, DollarSign, Check } from 'lucide-react'
@@ -365,6 +366,12 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
           </div>
         )}
       </div>
+    <ChatWidget
+        salonName={salon.salons?.name || ''}
+        services={services}
+        workingHours={workingHours}
+        primaryColor={primaryColor}
+      />
     </div>
   )
 }
