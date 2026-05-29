@@ -11,12 +11,34 @@ export default async function DashboardPage() {
     .from('salons').select('*').eq('owner_id', user.id).single()
 
   if (!salon) {
-    const { data: newSalon } = await supabase
-      .from('salons')
-      .insert({ owner_id: user.id, name: 'My Salon' })
-      .select().single()
-    salon = newSalon
+  const { data: newSalon } = await supabase
+    .from('salons')
+    .insert({ owner_id: user.id, name: 'My Salon' })
+    .select().single()
+  salon = newSalon
+
+  if (newSalon) {
+    // Auto-create booking settings
+    const slug = 'my-salon-' + newSalon.id.substring(0, 6)
+    await supabase.from('booking_settings').insert({
+      salon_id: newSalon.id,
+      slug,
+      headline: 'Book Your Appointment',
+    })
+
+    // Auto-create working hours
+    const days = [0,1,2,3,4,5,6]
+    await supabase.from('working_hours').insert(
+      days.map(day => ({
+        salon_id: newSalon.id,
+        day_of_week: day,
+        start_time: '09:00',
+        end_time: '18:00',
+        is_open: day !== 0,
+      }))
+    )
   }
+}
 
   const serviceClient = createServiceClient()
   const { data: bookingSettings } = await serviceClient
