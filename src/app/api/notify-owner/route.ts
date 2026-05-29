@@ -19,8 +19,9 @@ export async function POST(request: NextRequest) {
     if (!salon) return NextResponse.json({ ok: false, error: 'Salon not found' })
 
     const apptDate = new Date(scheduled_at)
-    const dateStr = format(apptDate, 'EEEE MMM d')
-    const timeStr = format(apptDate, 'h:mm a')
+    const { formatInTimeZone } = await import('date-fns-tz')
+    const dateStr = formatInTimeZone(apptDate, 'America/Toronto', 'EEEE MMM d')
+    const timeStr = formatInTimeZone(apptDate, 'America/Toronto', 'h:mm a')
 
     const message = `New booking at ${salon.name}! 🎉\n${client_name} booked ${service} on ${dateStr} at ${timeStr}.\nPhone: ${client_phone}`
 

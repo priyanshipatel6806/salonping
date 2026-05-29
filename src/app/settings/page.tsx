@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [form, setForm] = useState({ name: '', phone: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '' })
 
   useEffect(() => {
     async function loadSalon() {
@@ -13,7 +13,7 @@ export default function SettingsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       const { data: salon } = await supabase
         .from('salons').select('*').eq('owner_id', user?.id).single()
-      if (salon) setForm({ name: salon.name || '', phone: salon.phone || '' })
+      if (salon) setForm({ name: salon.name || '', phone: salon.phone || '', email: salon.owner_email || '' })
     }
     loadSalon()
   }, [])
@@ -24,7 +24,7 @@ export default function SettingsPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     await supabase.from('salons')
-      .update({ name: form.name, phone: form.phone })
+      .update({ name: form.name, phone: form.phone, owner_email: form.email })
       .eq('owner_id', user?.id)
     setSaved(true)
     setLoading(false)
@@ -45,6 +45,7 @@ export default function SettingsPage() {
             <a href="/dashboard" className="text-blue-200 hover:text-white text-sm transition-colors">Dashboard</a>
             <a href="/appointments" className="text-blue-200 hover:text-white text-sm transition-colors">Appointments</a>
             <a href="/services" className="text-blue-200 hover:text-white text-sm transition-colors">Services</a>
+            <a href="/hours" className="text-blue-200 hover:text-white text-sm transition-colors">Hours</a>
             <a href="/customise" className="text-blue-200 hover:text-white text-sm transition-colors">Customise</a>
           </div>
         </div>
@@ -56,7 +57,6 @@ export default function SettingsPage() {
           <p className="text-gray-500 text-sm mt-1">Manage your salon information and preferences</p>
         </div>
 
-        {/* Salon info */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-5">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}>
@@ -76,7 +76,7 @@ export default function SettingsPage() {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
                 placeholder="My Beautiful Salon"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all"
               />
             </div>
             <div>
@@ -86,9 +86,20 @@ export default function SettingsPage() {
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 placeholder="+1 226 555 0123"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all"
               />
-              <p className="text-xs text-gray-400 mt-1.5">We'll send you alerts when clients reschedule</p>
+              <p className="text-xs text-gray-400 mt-1.5">We'll send you an SMS when clients book online</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="you@example.com"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all"
+              />
+              <p className="text-xs text-gray-400 mt-1.5">We'll send you an email when clients book online</p>
             </div>
             <button
               type="submit"
@@ -101,7 +112,6 @@ export default function SettingsPage() {
           </form>
         </div>
 
-        {/* SMS preview */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-5">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}>
@@ -115,7 +125,7 @@ export default function SettingsPage() {
           <div className="space-y-3">
             {[
               { label: '48h', color: 'bg-blue-50 text-blue-700 border-blue-100', msg: 'Hi [Name]! Friendly reminder: your [Service] appointment at [Salon] is in 2 days. Reply STOP to unsubscribe.' },
-              { label: '24h', color: 'bg-green-50 text-green-700 border-green-100', msg: 'Hi [Name]! Your [Service] is TOMORROW. We\'ve reserved your spot — see you then! Reply STOP to unsubscribe.' },
+              { label: '24h', color: 'bg-green-50 text-green-700 border-green-100', msg: "Hi [Name]! Your [Service] is TOMORROW. We've reserved your spot — see you then! Reply STOP to unsubscribe." },
               { label: '2h', color: 'bg-purple-50 text-purple-700 border-purple-100', msg: 'See you in 2 hours [Name]! Your [Service] is at [Time] with [Salon]. Reply STOP to unsubscribe.' },
             ].map((item) => (
               <div key={item.label} className={`flex gap-4 p-4 rounded-xl border ${item.color}`}>
@@ -126,7 +136,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Plan */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}>
@@ -146,7 +155,7 @@ export default function SettingsPage() {
               className="text-white text-sm px-5 py-2.5 rounded-xl font-semibold hover:opacity-90 transition-all"
               style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
             >
-              Upgrade — $12/mo
+              Upgrade — $29/mo
             </button>
           </div>
         </div>
