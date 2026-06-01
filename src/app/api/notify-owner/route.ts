@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase-server'
 import { sendSMS } from '@/lib/twilio'
-import { sendEmail } from '@/lib/resend'
-import { format } from 'date-fns'
+import { sendGmail } from '@/lib/gmail'
+import { formatInTimeZone } from 'date-fns-tz'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,26 +19,20 @@ export async function POST(request: NextRequest) {
     if (!salon) return NextResponse.json({ ok: false, error: 'Salon not found' })
 
     const apptDate = new Date(scheduled_at)
-    const { formatInTimeZone } = await import('date-fns-tz')
     const dateStr = formatInTimeZone(apptDate, 'America/Toronto', 'EEEE MMM d')
     const timeStr = formatInTimeZone(apptDate, 'America/Toronto', 'h:mm a')
 
     const message = `New booking at ${salon.name}! 🎉\n${client_name} booked ${service} on ${dateStr} at ${timeStr}.\nPhone: ${client_phone}`
 
-    console.log('Salon phone:', salon.phone)
-    console.log('Sending notification...')
-
-    // Send SMS to owner if they have a phone number
+    // Send SMS to owner
     if (salon.phone) {
       const smsResult = await sendSMS(salon.phone, message)
-      console.log('SMS result:', smsResult)
-    } else {
-      console.log('No phone number set for salon')
+      console.log('SMS sent:', smsResult)
     }
 
-    // Send email to owner using their stored email
+    // Send email to owner via Gmail
     if (salon.owner_email) {
-      await sendEmail(
+      await sendGmail(
         salon.owner_email,
         `New Booking: ${client_name} — ${service}`,
         `
@@ -55,9 +49,14 @@ export async function POST(request: NextRequest) {
             <p style="margin:4px 0">⏰ <strong>Time:</strong> ${timeStr}</p>
           </div>
           <p>Log in to your dashboard to manage this appointment.</p>
+          <a href="https://salonping-app.vercel.app/dashboard" 
+             style="display:inline-block;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:10px 20px;border-radius:8px;text-decoration:none;margin-top:10px">
+            View Dashboard →
+          </a>
         </div>
         `
       )
+      console.log('Email sent to:', salon.owner_email)
     }
 
     return NextResponse.json({ ok: true })

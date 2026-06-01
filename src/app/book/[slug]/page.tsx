@@ -100,38 +100,50 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   async function confirmBooking() {
     if (!salon || !selectedService || !selectedDate || !selectedSlot) return
     setBooking(true)
-    const supabase = createClient()
+
     const scheduled_at = new Date(
       `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}T${selectedSlot.time}:00`
     ).toISOString()
-    const { data: newApt } = await supabase.from('appointments').insert({
-  salon_id: salon.salon_id,
-  client_name: form.name,
-  client_phone: form.phone,
-  client_email: form.email,
-  service: selectedService.name,
-  scheduled_at,
-  reminder_channel: form.reminder_channel,
-  booked_online: true,
-}).select().single()
 
-// Notify salon owner
-if (newApt) {
-  await fetch('/api/notify-owner', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      salon_id: salon.salon_id,
-      client_name: form.name,
-      client_phone: form.phone,
-      service: selectedService.name,
-      scheduled_at,
-      appointment_id: newApt.id,
-    }),
-  })
-}
+    try {
+      // Use API route to insert appointment (service role bypasses RLS)
+      const bookResponse = await fetch('/api/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          salon_id: salon.salon_id,
+          client_name: form.name,
+          client_phone: form.phone,
+          client_email: form.email,
+          service: selectedService.name,
+          scheduled_at,
+          reminder_channel: form.reminder_channel,
+        }),
+      })
+
+      const bookData = await bookResponse.json()
+
+      if (bookData.ok) {
+        // Notify salon owner
+        await fetch('/api/notify-owner', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            salon_id: salon.salon_id,
+            client_name: form.name,
+            client_phone: form.phone,
+            service: selectedService.name,
+            scheduled_at,
+            appointment_id: bookData.appointment.id,
+          }),
+        })
+        setBooked(true)
+      }
+    } catch (e) {
+      console.error('Booking error:', e)
+    }
+
     setBooking(false)
-    setBooked(true)
   }
 
   if (loading) return (
@@ -175,7 +187,6 @@ if (newApt) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="px-6 py-5" style={{background:`linear-gradient(135deg,#0f172a,${primaryColor})`}}>
         <div className="max-w-2xl mx-auto">
           <h1 className="text-white font-bold text-xl">{salon.salons?.name}</h1>
@@ -183,7 +194,6 @@ if (newApt) {
         </div>
       </div>
 
-      {/* Progress */}
       <div className="bg-white border-b border-gray-100 px-6 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2">
           {[{n:1,l:'Service'},{n:2,l:'Date & Time'},{n:3,l:'Your Details'}].map((s,i) => (
@@ -200,8 +210,6 @@ if (newApt) {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-8">
-
-        {/* Step 1 — Select Service */}
         {step === 1 && (
           <div>
             <h2 className="text-lg font-bold text-gray-900 mb-6">Select a Service</h2>
@@ -231,7 +239,6 @@ if (newApt) {
           </div>
         )}
 
-        {/* Step 2 — Select Date & Time */}
         {step === 2 && (
           <div>
             <button onClick={() => setStep(1)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
@@ -309,14 +316,12 @@ if (newApt) {
           </div>
         )}
 
-        {/* Step 3 — Client Details */}
         {step === 3 && (
           <div>
             <button onClick={() => setStep(2)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-6">
               <ChevronLeft size={16} /> Back
             </button>
 
-            {/* Booking summary */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
               <h3 className="font-semibold text-gray-900 mb-3">Booking Summary</h3>
               <div className="space-y-2 text-sm">
@@ -328,7 +333,6 @@ if (newApt) {
               </div>
             </div>
 
-            {/* Client form */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Your Details</h3>
               <div className="space-y-4">
@@ -382,7 +386,7 @@ if (newApt) {
           </div>
         )}
       </div>
-    <ChatWidget
+      <ChatWidget
         salonName={salon.salons?.name || ''}
         services={services}
         workingHours={workingHours}
