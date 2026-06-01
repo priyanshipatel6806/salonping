@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Save, ExternalLink } from 'lucide-react'
+import { Save, ExternalLink, Upload, Image as ImageIcon } from 'lucide-react'
 
 const TEMPLATES = [
   { id: 'modern', name: 'Modern', desc: 'Clean and professional', emoji: '✨' },
@@ -20,12 +20,19 @@ export default function CustomisePage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [slug, setSlug] = useState('')
+  const [salonId, setSalonId] = useState('')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     headline: '',
     description: '',
     primary_color: '#1e3a5f',
     template: 'modern',
     google_review_link: '',
+    logo_url: '',
+    cover_photo_url: '',
   })
 
   useEffect(() => { loadSettings() }, [])
@@ -35,6 +42,7 @@ export default function CustomisePage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { data: salon } = await supabase
       .from('salons').select('id').eq('owner_id', user?.id).single()
+    setSalonId(salon?.id || '')
     const { data: settings } = await supabase
       .from('booking_settings').select('*')
       .eq('salon_id', salon?.id).single()
@@ -46,6 +54,8 @@ export default function CustomisePage() {
         primary_color: settings.primary_color || '#1e3a5f',
         template: settings.template || 'modern',
         google_review_link: settings.google_review_link || '',
+        logo_url: settings.logo_url || '',
+        cover_photo_url: settings.cover_photo_url || '',
       })
     }
     setLoading(false)
@@ -63,6 +73,23 @@ export default function CustomisePage() {
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  async function uploadPhoto(file: File, type: 'logo' | 'cover') {
+    const setter = type === 'logo' ? setUploadingLogo : setUploadingCover
+    setter(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()
+      const path = `${salonId}/${type}.${ext}`
+      const { error } = await supabase.storage.from('salon-photos').upload(path, file, { upsert: true })
+      if (!error) {
+        const { data: urlData } = supabase.storage.from('salon-photos').getPublicUrl(path)
+        const url = urlData.publicUrl + `?t=${Date.now()}`
+        setForm(f => ({ ...f, [type === 'logo' ? 'logo_url' : 'cover_photo_url']: url }))
+      }
+    } catch {}
+    setter(false)
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
@@ -121,6 +148,68 @@ export default function CustomisePage() {
           <div className="text-center py-12 text-gray-400">Loading...</div>
         ) : (
           <div className="space-y-6">
+
+            {/* Salon Photos */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="font-bold text-gray-900 mb-1">Salon Photos</h2>
+              <p className="text-xs text-gray-400 mb-5">Shown on your booking page header. Requires the <code className="bg-gray-100 px-1 rounded">salon-photos</code> storage bucket in Supabase.</p>
+              <div className="grid grid-cols-2 gap-4">
+
+                {/* Logo */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Salon Logo</label>
+                  <div
+                    onClick={() => logoInputRef.current?.click()}
+                    className="relative rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 cursor-pointer transition-all overflow-hidden flex items-center justify-center"
+                    style={{height:100}}>
+                    {form.logo_url
+                      ? <img src={form.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                      : <div className="text-center text-gray-400">
+                          <ImageIcon size={20} className="mx-auto mb-1" />
+                          <p className="text-xs">Upload logo</p>
+                        </div>}
+                    {uploadingLogo && (
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  <input ref={logoInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={e => e.target.files?.[0] && uploadPhoto(e.target.files[0], 'logo')} />
+                  {form.logo_url && (
+                    <button onClick={() => setForm({...form, logo_url:''})}
+                      className="text-xs text-red-400 hover:text-red-600 mt-1">Remove</button>
+                  )}
+                </div>
+
+                {/* Cover photo */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Photo</label>
+                  <div
+                    onClick={() => coverInputRef.current?.click()}
+                    className="relative rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 cursor-pointer transition-all overflow-hidden flex items-center justify-center"
+                    style={{height:100}}>
+                    {form.cover_photo_url
+                      ? <img src={form.cover_photo_url} alt="Cover" className="w-full h-full object-cover" />
+                      : <div className="text-center text-gray-400">
+                          <Upload size={20} className="mx-auto mb-1" />
+                          <p className="text-xs">Upload cover</p>
+                        </div>}
+                    {uploadingCover && (
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  <input ref={coverInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={e => e.target.files?.[0] && uploadPhoto(e.target.files[0], 'cover')} />
+                  {form.cover_photo_url && (
+                    <button onClick={() => setForm({...form, cover_photo_url:''})}
+                      className="text-xs text-red-400 hover:text-red-600 mt-1">Remove</button>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* Template */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">

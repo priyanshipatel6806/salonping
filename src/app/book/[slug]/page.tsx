@@ -2,13 +2,48 @@
 import ChatWidget from './chat-widget'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { ChevronLeft, ChevronRight, Clock, DollarSign, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock, Check, Sparkles } from 'lucide-react'
 
 type Service = { id: string; name: string; duration_minutes: number; price: number; description: string }
 type Slot = { time: string; label: string }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
+const GOLD = '#c9a84c'
+const DARK = '#0a0a0a'
+
+function GoldDivider() {
+  return (
+    <div className="flex items-center gap-3 my-6">
+      <div className="flex-1 h-px" style={{background:'linear-gradient(to right,transparent,rgba(201,168,76,0.4))'}} />
+      <Sparkles size={12} style={{color:GOLD}} />
+      <div className="flex-1 h-px" style={{background:'linear-gradient(to left,transparent,rgba(201,168,76,0.4))'}} />
+    </div>
+  )
+}
+
+function Confetti() {
+  const pieces = Array.from({length:16}).map((_,i) => ({
+    left: `${(i*6.25)}%`,
+    delay: `${(i*0.07).toFixed(2)}s`,
+    color: i % 3 === 0 ? GOLD : i % 3 === 1 ? '#f5e18a' : '#fff',
+    size: i % 2 === 0 ? 6 : 8,
+  }))
+  return (
+    <div className="absolute inset-x-0 top-0 overflow-hidden pointer-events-none" style={{height:'100px'}}>
+      {pieces.map((p,i) => (
+        <div key={i} style={{
+          position:'absolute', left:p.left, top:0,
+          width:p.size, height:p.size,
+          borderRadius: i%3===0 ? '50%' : '2px',
+          background:p.color, opacity:0.9,
+          animation:`confettiFall 1.2s ease ${p.delay} both`,
+        }} />
+      ))}
+    </div>
+  )
+}
 
 export default function BookingPage({ params }: { params: Promise<{ slug: string }> }) {
   const [slug, setSlug] = useState('')
@@ -28,31 +63,21 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   const [bookingError, setBookingError] = useState('')
 
   useEffect(() => {
-    params.then(p => {
-      setSlug(p.slug)
-      loadSalon(p.slug)
-    })
+    params.then(p => { setSlug(p.slug); loadSalon(p.slug) })
   }, [])
 
   async function loadSalon(slugVal: string) {
     const supabase = createClient()
     const { data: settings } = await supabase
-      .from('booking_settings')
-      .select('*, salons(*)')
-      .eq('slug', slugVal)
-      .single()
+      .from('booking_settings').select('*, salons(*)')
+      .eq('slug', slugVal).single()
     if (!settings) { setLoading(false); return }
     setSalon(settings)
-    const { data: svcs } = await supabase
-      .from('services').select('*')
-      .eq('salon_id', settings.salon_id)
-      .eq('active', true)
-      .order('name')
+    const { data: svcs } = await supabase.from('services').select('*')
+      .eq('salon_id', settings.salon_id).eq('active', true).order('name')
     setServices(svcs || [])
-    const { data: wh } = await supabase
-      .from('working_hours').select('*')
-      .eq('salon_id', settings.salon_id)
-      .order('day_of_week')
+    const { data: wh } = await supabase.from('working_hours').select('*')
+      .eq('salon_id', settings.salon_id).order('day_of_week')
     setWorkingHours(wh || [])
     setLoading(false)
   }
@@ -69,8 +94,8 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     while (current <= end) {
       const h = Math.floor(current / 60)
       const m = current % 60
-      const label = `${h > 12 ? h - 12 : h}:${m.toString().padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`
-      slots.push({ time: `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`, label })
+      const label = `${h > 12 ? h - 12 : h === 0 ? 12 : h}:${m.toString().padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`
+      slots.push({ time: `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`, label })
       current += 30
     }
     setAvailableSlots(slots)
@@ -79,189 +104,277 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   function isDateAvailable(date: Date) {
     const dayOfWeek = date.getDay()
     const dayHours = workingHours.find(h => h.day_of_week === dayOfWeek)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = new Date(); today.setHours(0,0,0,0)
     return dayHours?.is_open && date >= today
   }
 
   function getDaysInMonth(date: Date) {
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const firstDay = new Date(year, month, 1).getDay()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-    return { firstDay, daysInMonth }
+    const year = date.getFullYear(), month = date.getMonth()
+    return {
+      firstDay: new Date(year, month, 1).getDay(),
+      daysInMonth: new Date(year, month + 1, 0).getDate(),
+    }
   }
 
   function selectDate(date: Date) {
-    setSelectedDate(date)
-    setSelectedSlot(null)
+    setSelectedDate(date); setSelectedSlot(null)
     if (selectedService) generateSlots(date, selectedService)
   }
 
   async function confirmBooking() {
     if (!salon || !selectedService || !selectedDate || !selectedSlot) return
-    setBooking(true)
-    setBookingError('')
-
+    setBooking(true); setBookingError('')
     const scheduled_at = new Date(
       `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}T${selectedSlot.time}:00`
     ).toISOString()
-
     try {
       const bookResponse = await fetch('/api/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          salon_id: salon.salon_id,
-          client_name: form.name,
-          client_phone: form.phone,
-          client_email: form.email,
-          service: selectedService.name,
-          scheduled_at,
-          reminder_channel: form.reminder_channel,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ salon_id: salon.salon_id, client_name: form.name, client_phone: form.phone,
+          client_email: form.email, service: selectedService.name, scheduled_at, reminder_channel: form.reminder_channel }),
       })
-
       const bookData = await bookResponse.json()
-
       if (bookData.ok) {
         await fetch('/api/notify-owner', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            salon_id: salon.salon_id,
-            client_name: form.name,
-            client_phone: form.phone,
-            service: selectedService.name,
-            scheduled_at,
-            appointment_id: bookData.appointment.id,
-          }),
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ salon_id: salon.salon_id, client_name: form.name, client_phone: form.phone,
+            service: selectedService.name, scheduled_at, appointment_id: bookData.appointment.id }),
         })
         setBooked(true)
       } else {
         setBookingError(bookData.error || 'Something went wrong. Please try again.')
       }
-    } catch (e) {
-      setBookingError('Something went wrong. Please try again.')
-    }
-
+    } catch { setBookingError('Something went wrong. Please try again.') }
     setBooking(false)
   }
 
+  const accentColor = salon?.primary_color || GOLD
+  const { firstDay, daysInMonth } = salon ? getDaysInMonth(currentMonth) : { firstDay: 0, daysInMonth: 0 }
+
+  const salonName: string = salon?.salons?.name || ''
+  const initials = salonName.split(' ').map((w: string) => w[0]).slice(0,2).join('').toUpperCase()
+  const logoUrl: string | null = salon?.logo_url || null
+  const coverUrl: string | null = salon?.cover_photo_url || null
+
+  // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-gray-400 text-sm">Loading...</div>
+    <div className="min-h-screen flex items-center justify-center" style={{background:DARK}}>
+      <div className="text-center">
+        <div className="w-10 h-10 rounded-full border-2 border-t-transparent mx-auto mb-3 animate-spin" style={{borderColor:`${GOLD} transparent ${GOLD} ${GOLD}`}} />
+        <p className="text-sm" style={{color:'rgba(255,255,255,0.4)'}}>Loading your experience…</p>
+      </div>
     </div>
   )
 
   if (!salon) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center" style={{background:DARK}}>
       <div className="text-center">
-        <div className="text-4xl mb-4">😕</div>
-        <h1 className="text-xl font-bold text-gray-900">Salon not found</h1>
-        <p className="text-gray-500 text-sm mt-2">This booking link may be incorrect</p>
+        <div className="text-5xl mb-4">✦</div>
+        <h1 className="text-xl font-bold text-white">Salon not found</h1>
+        <p className="text-sm mt-2" style={{color:'rgba(255,255,255,0.4)'}}>This booking link may be incorrect.</p>
       </div>
     </div>
   )
 
+  // ── Booked confirmation ──────────────────────────────────────────────────
   if (booked) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 max-w-md w-full mx-4 text-center">
-        <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Check size={32} className="text-green-600" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h1>
-        <p className="text-gray-500 text-sm mb-6">
-          Your {selectedService?.name} appointment at <strong>{salon.salons?.name}</strong> is confirmed for{' '}
-          <strong>{selectedDate?.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' })}</strong> at{' '}
-          <strong>{selectedSlot?.label}</strong>.
-        </p>
-        <div className="bg-blue-50 rounded-xl p-4 text-left">
-          <p className="text-xs font-semibold text-blue-800 mb-1">📱 Reminders coming your way</p>
-          <p className="text-xs text-blue-600">You will receive reminders 48 hours, 24 hours, and 2 hours before your appointment via {form.reminder_channel.toUpperCase()}.</p>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{background:DARK}}>
+      <div className="relative w-full max-w-md">
+        <Confetti />
+        <div className="glass-card rounded-3xl p-10 text-center animate-fade-in-up" style={{border:`1px solid rgba(201,168,76,0.3)`}}>
+          {/* Animated check */}
+          <div className="mx-auto mb-6 animate-scale-in" style={{width:80,height:80}}>
+            <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="40" cy="40" r="38" stroke={GOLD} strokeWidth="2" />
+              <circle cx="40" cy="40" r="38" fill="rgba(201,168,76,0.08)" />
+              <polyline
+                points="22,42 34,54 58,28"
+                stroke={GOLD} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"
+                className="animate-check-draw"
+              />
+            </svg>
+          </div>
+
+          <h1 className="text-3xl font-bold text-white mb-1 animate-fade-in-up" style={{animationDelay:'0.2s'}}>
+            Confirmed!
+          </h1>
+          <p className="shimmer-text font-semibold text-lg mb-6 animate-fade-in-up" style={{animationDelay:'0.3s'}}>
+            {selectedService?.name}
+          </p>
+
+          <div className="glass-card rounded-2xl p-5 mb-6 text-left space-y-3 animate-fade-in-up" style={{animationDelay:'0.4s'}}>
+            {[
+              { label: 'Salon', value: salonName },
+              { label: 'Date', value: selectedDate?.toLocaleDateString('en-CA', { weekday:'long', month:'long', day:'numeric' }) },
+              { label: 'Time', value: selectedSlot?.label },
+              { label: 'Duration', value: `${selectedService?.duration_minutes} min` },
+            ].map(row => (
+              <div key={row.label} className="flex justify-between text-sm">
+                <span style={{color:'rgba(255,255,255,0.45)'}}>{row.label}</span>
+                <span className="text-white font-medium">{row.value}</span>
+              </div>
+            ))}
+            <div className="pt-2 border-t flex justify-between text-sm font-bold" style={{borderColor:'rgba(201,168,76,0.2)'}}>
+              <span style={{color:GOLD}}>Total</span>
+              <span className="text-white">${selectedService?.price} CAD</span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl px-5 py-4 animate-fade-in-up" style={{animationDelay:'0.5s', background:'rgba(201,168,76,0.08)', border:'1px solid rgba(201,168,76,0.2)'}}>
+            <p className="text-xs font-semibold mb-1" style={{color:GOLD}}>✦ Reminders on their way</p>
+            <p className="text-xs" style={{color:'rgba(255,255,255,0.5)'}}>
+              You'll receive reminders 48h, 24h, and 2h before via {form.reminder_channel.toUpperCase()}.
+            </p>
+          </div>
         </div>
       </div>
     </div>
   )
 
-  const primaryColor = salon.primary_color || '#1e3a5f'
-  const { firstDay, daysInMonth } = getDaysInMonth(currentMonth)
-
+  // ── Main booking UI ──────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="px-6 py-5" style={{background:`linear-gradient(135deg,#0f172a,${primaryColor})`}}>
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-white font-bold text-xl">{salon.salons?.name}</h1>
-          <p className="text-blue-200 text-sm mt-1">{salon.headline}</p>
+    <div className="min-h-screen" style={{background:DARK}}>
+
+      {/* ── HEADER ──────────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden" style={{minHeight:200}}>
+        {/* Cover photo or gradient */}
+        {coverUrl ? (
+          <img src={coverUrl} alt="Salon cover" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0" style={{
+            background:`linear-gradient(135deg, #0a0a0a 0%, #1a1205 40%, ${accentColor}22 100%)`
+          }} />
+        )}
+        {/* Overlay */}
+        <div className="absolute inset-0" style={{background:'linear-gradient(to bottom,rgba(0,0,0,0.3) 0%,rgba(10,10,10,0.85) 100%)'}} />
+
+        {/* Gold shimmer line top */}
+        <div className="absolute top-0 inset-x-0 h-px" style={{background:`linear-gradient(to right,transparent,${GOLD},transparent)`}} />
+
+        <div className="relative z-10 max-w-2xl mx-auto px-6 py-8 flex items-end gap-5" style={{minHeight:200}}>
+          {/* Logo */}
+          <div className="animate-pulse-gold rounded-2xl flex items-center justify-center text-xl font-bold flex-shrink-0 overflow-hidden"
+            style={{width:64,height:64, background:`linear-gradient(135deg,${DARK},#2a1f08)`, border:`2px solid ${GOLD}`, color:GOLD}}>
+            {logoUrl
+              ? <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+              : <span>{initials || '✦'}</span>
+            }
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white leading-tight">{salonName}</h1>
+            {salon.headline && (
+              <p className="text-sm mt-1" style={{color:'rgba(255,255,255,0.55)'}}>{salon.headline}</p>
+            )}
+            <div className="flex items-center gap-1.5 mt-2">
+              {[...Array(5)].map((_,i) => (
+                <svg key={i} width="12" height="12" viewBox="0 0 12 12" fill={GOLD}><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9.5,11 6,9 2.5,11 3.5,7.5 1,5 4.5,4.5"/></svg>
+              ))}
+              <span className="text-xs ml-1" style={{color:'rgba(255,255,255,0.4)'}}>Premium experience</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white border-b border-gray-100 px-6 py-3">
+      {/* ── STEP INDICATOR ─────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 px-6 py-3" style={{background:'rgba(10,10,10,0.9)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(201,168,76,0.1)'}}>
         <div className="max-w-2xl mx-auto flex items-center gap-2">
-          {[{n:1,l:'Service'},{n:2,l:'Date & Time'},{n:3,l:'Your Details'}].map((s,i) => (
+          {[{n:1,l:'Service'},{n:2,l:'Date & Time'},{n:3,l:'Details'}].map((s,i) => (
             <div key={s.n} className="flex items-center gap-2">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${step >= s.n ? 'text-white' : 'bg-gray-100 text-gray-400'}`}
-                style={step >= s.n ? {background:`linear-gradient(135deg,#0f172a,${primaryColor})`} : {}}>
-                {step > s.n ? <Check size={12} /> : s.n}
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                style={step >= s.n
+                  ? {background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a'}
+                  : {background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.3)'}}>
+                {step > s.n ? <Check size={11} /> : s.n}
               </div>
-              <span className={`text-xs font-medium ${step >= s.n ? 'text-gray-900' : 'text-gray-400'}`}>{s.l}</span>
-              {i < 2 && <div className="w-8 h-px bg-gray-200 mx-1" />}
+              <span className="text-xs font-medium transition-colors" style={{color: step >= s.n ? GOLD : 'rgba(255,255,255,0.3)'}}>{s.l}</span>
+              {i < 2 && <div className="w-6 h-px mx-1" style={{background:`rgba(201,168,76,${step > s.n ? '0.5' : '0.15'})`}} />}
             </div>
           ))}
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-8">
+
+        {/* ── STEP 1: Service ─────────────────────────────────────────── */}
         {step === 1 && (
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 mb-6">Select a Service</h2>
+          <div className="animate-fade-in-up">
+            <h2 className="text-lg font-bold text-white mb-2">Choose Your Service</h2>
+            <p className="text-sm mb-6" style={{color:'rgba(255,255,255,0.4)'}}>Select the service you'd like to book</p>
             <div className="space-y-3">
-              {services.map(service => (
+              {services.map((service, idx) => (
                 <button
                   key={service.id}
                   onClick={() => { setSelectedService(service); setStep(2) }}
-                  className={`w-full text-left bg-white rounded-2xl border p-5 transition-all hover:shadow-sm ${selectedService?.id === service.id ? 'border-blue-500 bg-blue-50' : 'border-gray-100'}`}
+                  className="w-full text-left rounded-2xl p-5 transition-all group"
+                  style={{
+                    animationDelay: `${idx * 0.06}s`,
+                    border: selectedService?.id === service.id ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.08)',
+                    background: selectedService?.id === service.id ? `rgba(201,168,76,0.08)` : 'rgba(255,255,255,0.03)',
+                  }}
                 >
                   <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-semibold text-gray-900">{service.name}</div>
-                      {service.description && <div className="text-sm text-gray-500 mt-0.5">{service.description}</div>}
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xs text-gray-400 flex items-center gap-1"><Clock size={11} />{service.duration_minutes} min</span>
+                    <div className="flex-1 mr-4">
+                      <div className="font-semibold text-white text-base">{service.name}</div>
+                      {service.description && (
+                        <div className="text-sm mt-1" style={{color:'rgba(255,255,255,0.45)'}}>{service.description}</div>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-3">
+                        <Clock size={11} style={{color:GOLD}} />
+                        <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{service.duration_minutes} min</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-gray-900 flex items-center gap-0.5"><DollarSign size={14} />{service.price}</div>
-                      <div className="text-xs text-gray-400">CAD</div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-xl font-bold" style={{color:GOLD}}>${service.price}</div>
+                      <div className="text-xs" style={{color:'rgba(255,255,255,0.3)'}}>CAD</div>
                     </div>
                   </div>
+                  {/* Gold bottom border that appears on hover */}
+                  <div className="h-px mt-4 rounded transition-all"
+                    style={{background:`linear-gradient(to right,${GOLD},transparent)`, opacity: selectedService?.id === service.id ? 1 : 0}} />
                 </button>
               ))}
             </div>
           </div>
         )}
 
+        {/* ── STEP 2: Date & Time ──────────────────────────────────────── */}
         {step === 2 && (
-          <div>
-            <button onClick={() => setStep(1)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+          <div className="animate-fade-in-up">
+            <button onClick={() => setStep(1)} className="flex items-center gap-1 text-sm mb-6 transition-colors hover:opacity-100"
+              style={{color:'rgba(255,255,255,0.4)'}}>
               <ChevronLeft size={16} /> Back
             </button>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-gray-900">{MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h2>
+
+            {/* Selected service summary */}
+            <div className="flex items-center justify-between rounded-2xl px-5 py-3 mb-6"
+              style={{background:'rgba(201,168,76,0.08)', border:`1px solid rgba(201,168,76,0.25)`}}>
+              <span className="font-semibold text-white">{selectedService?.name}</span>
+              <div className="flex items-center gap-3 text-sm">
+                <span style={{color:'rgba(255,255,255,0.4)'}}>{selectedService?.duration_minutes} min</span>
+                <span className="font-bold" style={{color:GOLD}}>${selectedService?.price} CAD</span>
+              </div>
+            </div>
+
+            {/* Calendar */}
+            <div className="rounded-2xl p-6 mb-4" style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)'}}>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-white">{MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
                 <div className="flex gap-2">
-                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth()-1))}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth()+1))}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                    <ChevronRight size={16} />
-                  </button>
+                  {[
+                    { dir: -1, Icon: ChevronLeft },
+                    { dir: 1, Icon: ChevronRight },
+                  ].map(({dir, Icon}) => (
+                    <button key={dir}
+                      onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth()+dir))}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg transition-all"
+                      style={{background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.6)'}}>
+                      <Icon size={15} />
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {DAYS.map(d => <div key={d} className="text-center text-xs font-semibold text-gray-400 py-1">{d}</div>)}
+              <div className="grid grid-cols-7 gap-1 mb-3">
+                {DAYS.map(d => <div key={d} className="text-center text-xs font-semibold py-1" style={{color:'rgba(255,255,255,0.3)'}}>{d}</div>)}
               </div>
               <div className="grid grid-cols-7 gap-1">
                 {Array.from({length: firstDay}).map((_,i) => <div key={i} />)}
@@ -273,9 +386,12 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                     <button key={i}
                       onClick={() => available && selectDate(date)}
                       disabled={!available}
-                      className={`h-9 rounded-xl text-sm font-medium transition-all ${isSelected ? 'text-white' : available ? 'hover:bg-blue-50 text-gray-900' : 'text-gray-300 cursor-not-allowed'}`}
-                      style={isSelected ? {background:`linear-gradient(135deg,#0f172a,${primaryColor})`} : {}}
-                    >
+                      className="h-9 rounded-xl text-sm font-medium transition-all"
+                      style={isSelected
+                        ? {background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700}
+                        : available
+                          ? {color:'rgba(255,255,255,0.85)'}
+                          : {color:'rgba(255,255,255,0.15)', cursor:'not-allowed'}}>
                       {i+1}
                     </button>
                   )
@@ -283,122 +399,141 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
               </div>
             </div>
 
+            {/* Time slots */}
             {selectedDate && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">
-                  Available times for {selectedDate.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' })}
+              <div className="rounded-2xl p-6" style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)'}}>
+                <h3 className="font-semibold text-white mb-4">
+                  Available times — {selectedDate.toLocaleDateString('en-CA', { weekday:'long', month:'short', day:'numeric' })}
                 </h3>
                 {availableSlots.length > 0 ? (
-                  <div className="grid grid-cols-4 gap-2">
-                    {availableSlots.map(slot => (
-                      <button
-                        key={slot.time}
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`py-2 rounded-xl text-sm font-medium transition-all border ${selectedSlot?.time === slot.time ? 'text-white border-transparent' : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
-                        style={selectedSlot?.time === slot.time ? {background:`linear-gradient(135deg,#0f172a,${primaryColor})`} : {}}
-                      >
-                        {slot.label}
+                  <>
+                    <div className="grid grid-cols-4 gap-2">
+                      {availableSlots.map(slot => (
+                        <button key={slot.time}
+                          onClick={() => setSelectedSlot(slot)}
+                          className="py-2.5 rounded-xl text-sm font-medium transition-all"
+                          style={selectedSlot?.time === slot.time
+                            ? {background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700}
+                            : {border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.75)'}}>
+                          {slot.label}
+                        </button>
+                      ))}
+                    </div>
+                    {selectedSlot && (
+                      <button onClick={() => setStep(3)}
+                        className="w-full mt-5 py-3.5 rounded-xl font-semibold transition-all hover:opacity-90"
+                        style={{background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a'}}>
+                        Continue →
                       </button>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 ) : (
-                  <p className="text-gray-400 text-sm">No available slots for this day.</p>
-                )}
-                {selectedSlot && (
-                  <button
-                    onClick={() => setStep(3)}
-                    className="w-full mt-4 text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all"
-                    style={{background:`linear-gradient(135deg,#0f172a,${primaryColor})`}}
-                  >
-                    Continue →
-                  </button>
+                  <p className="text-sm" style={{color:'rgba(255,255,255,0.35)'}}>No available slots for this day.</p>
                 )}
               </div>
             )}
           </div>
         )}
 
+        {/* ── STEP 3: Details ──────────────────────────────────────────── */}
         {step === 3 && (
-          <div>
-            <button onClick={() => setStep(2)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-6">
+          <div className="animate-fade-in-up">
+            <button onClick={() => setStep(2)} className="flex items-center gap-1 text-sm mb-6 transition-colors"
+              style={{color:'rgba(255,255,255,0.4)'}}>
               <ChevronLeft size={16} /> Back
             </button>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Booking Summary</h3>
+            {/* Summary */}
+            <div className="rounded-2xl p-5 mb-6" style={{background:'rgba(201,168,76,0.06)', border:`1px solid rgba(201,168,76,0.25)`}}>
+              <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                <Sparkles size={14} style={{color:GOLD}} /> Booking Summary
+              </h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-gray-500">Service</span><span className="font-medium">{selectedService?.name}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-medium">{selectedDate?.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Time</span><span className="font-medium">{selectedSlot?.label}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Duration</span><span className="font-medium">{selectedService?.duration_minutes} min</span></div>
-                <div className="flex justify-between border-t border-gray-100 pt-2 mt-2"><span className="font-semibold text-gray-900">Total</span><span className="font-bold text-gray-900">${selectedService?.price} CAD</span></div>
+                {[
+                  { label:'Service',  value: selectedService?.name },
+                  { label:'Date',     value: selectedDate?.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'}) },
+                  { label:'Time',     value: selectedSlot?.label },
+                  { label:'Duration', value: `${selectedService?.duration_minutes} min` },
+                ].map(row => (
+                  <div key={row.label} className="flex justify-between">
+                    <span style={{color:'rgba(255,255,255,0.4)'}}>{row.label}</span>
+                    <span className="text-white font-medium">{row.value}</span>
+                  </div>
+                ))}
+                <GoldDivider />
+                <div className="flex justify-between font-bold text-base">
+                  <span style={{color:GOLD}}>Total</span>
+                  <span className="text-white">${selectedService?.price} CAD</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Your Details</h3>
+            {/* Form */}
+            <div className="rounded-2xl p-6" style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)'}}>
+              <h3 className="font-semibold text-white mb-5">Your Details</h3>
               <div className="space-y-4">
+                {[
+                  { key:'name',  label:'Full Name',      type:'text',  ph:'Jane Smith' },
+                  { key:'phone', label:'Phone Number',   type:'tel',   ph:'+1 226 555 0123', hint:'Include country code e.g. +1 226 555 0123' },
+                  { key:'email', label:'Email Address',  type:'email', ph:'jane@example.com' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="block text-sm font-semibold mb-1.5" style={{color:'rgba(255,255,255,0.7)'}}>{f.label}</label>
+                    <input type={f.type} value={(form as any)[f.key]}
+                      onChange={e => setForm({...form, [f.key]: e.target.value})}
+                      required={f.key !== 'email'} placeholder={f.ph}
+                      className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
+                      style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)'}}
+                      onFocus={e => { e.target.style.border=`1px solid ${GOLD}`; e.target.style.background='rgba(201,168,76,0.05)' }}
+                      onBlur={e => { e.target.style.border='1px solid rgba(255,255,255,0.1)'; e.target.style.background='rgba(255,255,255,0.06)' }}
+                    />
+                    {f.hint && <p className="text-xs mt-1" style={{color:'rgba(255,255,255,0.3)'}}>{f.hint}</p>}
+                  </div>
+                ))}
+
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
-                  <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                    required placeholder="Jane Smith"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number</label>
-                  <input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
-                    required placeholder="+1 226 555 0123"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50" />
-                  <p className="text-xs text-gray-400 mt-1">Include country code e.g. +1 226 555 0123</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
-                  <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})}
-                    placeholder="jane@example.com"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">How would you like your reminders?</label>
+                  <label className="block text-sm font-semibold mb-2" style={{color:'rgba(255,255,255,0.7)'}}>Reminder preference</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { value: 'sms', label: '📱 SMS', desc: 'Text message' },
-                      { value: 'email', label: '📧 Email', desc: 'Email reminder' },
-                      { value: 'whatsapp', label: '💬 WhatsApp', desc: 'WhatsApp message' },
+                      { value:'sms', emoji:'📱', label:'SMS' },
+                      { value:'email', emoji:'📧', label:'Email' },
+                      { value:'whatsapp', emoji:'💬', label:'WhatsApp' },
                     ].map(opt => (
-                      <button key={opt.value}
-                        onClick={() => setForm({...form, reminder_channel: opt.value})}
-                        className={`p-3 rounded-xl border text-center transition-all ${form.reminder_channel === opt.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
-                      >
-                        <div className="text-lg">{opt.label.split(' ')[0]}</div>
-                        <div className="text-xs font-semibold text-gray-900 mt-0.5">{opt.label.split(' ')[1]}</div>
-                        <div className="text-xs text-gray-400">{opt.desc}</div>
+                      <button key={opt.value} onClick={() => setForm({...form, reminder_channel: opt.value})}
+                        className="p-3 rounded-xl text-center transition-all"
+                        style={form.reminder_channel === opt.value
+                          ? {background:'rgba(201,168,76,0.1)', border:`1px solid ${GOLD}`, color:GOLD}
+                          : {background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)'}}>
+                        <div className="text-lg">{opt.emoji}</div>
+                        <div className="text-xs font-semibold mt-0.5">{opt.label}</div>
                       </button>
                     ))}
                   </div>
                 </div>
+
                 {bookingError && (
-                  <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-600">
+                  <div className="rounded-xl px-4 py-3 text-sm" style={{background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', color:'#fca5a5'}}>
                     ⚠️ {bookingError}
                   </div>
                 )}
-                <button
-                  onClick={confirmBooking}
+
+                <button onClick={confirmBooking}
                   disabled={!form.name || !form.phone || booking}
-                  className="w-full text-white py-3.5 rounded-xl font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
-                  style={{background:`linear-gradient(135deg,#0f172a,${primaryColor})`}}
-                >
-                  {booking ? 'Confirming...' : 'Confirm Booking'}
+                  className="w-full py-4 rounded-xl font-bold text-base transition-all hover:opacity-90 disabled:opacity-40"
+                  style={{background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a'}}>
+                  {booking ? 'Confirming your booking…' : '✦ Confirm Booking'}
                 </button>
               </div>
             </div>
           </div>
         )}
       </div>
+
       <ChatWidget
-        salonName={salon.salons?.name || ''}
+        salonName={salonName}
         services={services}
         workingHours={workingHours}
-        primaryColor={primaryColor}
+        primaryColor={GOLD}
       />
     </div>
   )
