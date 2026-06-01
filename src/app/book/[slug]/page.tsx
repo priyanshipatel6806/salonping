@@ -25,6 +25,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   const [booking, setBooking] = useState(false)
   const [booked, setBooked] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [bookingError, setBookingError] = useState('')
 
   useEffect(() => {
     params.then(p => {
@@ -100,13 +101,13 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   async function confirmBooking() {
     if (!salon || !selectedService || !selectedDate || !selectedSlot) return
     setBooking(true)
+    setBookingError('')
 
     const scheduled_at = new Date(
       `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}T${selectedSlot.time}:00`
     ).toISOString()
 
     try {
-      // Use API route to insert appointment (service role bypasses RLS)
       const bookResponse = await fetch('/api/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -124,7 +125,6 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
       const bookData = await bookResponse.json()
 
       if (bookData.ok) {
-        // Notify salon owner
         await fetch('/api/notify-owner', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -138,9 +138,11 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
           }),
         })
         setBooked(true)
+      } else {
+        setBookingError(bookData.error || 'Something went wrong. Please try again.')
       }
     } catch (e) {
-      console.error('Booking error:', e)
+      setBookingError('Something went wrong. Please try again.')
     }
 
     setBooking(false)
@@ -347,6 +349,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                   <input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
                     required placeholder="+1 226 555 0123"
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50" />
+                  <p className="text-xs text-gray-400 mt-1">Include country code e.g. +1 226 555 0123</p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
@@ -373,6 +376,11 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                     ))}
                   </div>
                 </div>
+                {bookingError && (
+                  <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-600">
+                    ⚠️ {bookingError}
+                  </div>
+                )}
                 <button
                   onClick={confirmBooking}
                   disabled={!form.name || !form.phone || booking}

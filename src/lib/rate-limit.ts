@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase-server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 
+                request.headers.get('x-real-ip') || 
+                'unknown'
+    
+    const { allowed, remaining } = checkRateLimit(ip)
+    
+    if (!allowed) {
+      return NextResponse.json({ 
+        ok: false, 
+        error: 'Too many booking attempts. Please try again in an hour.' 
+      }, { status: 429 })
+    }
+
     const body = await request.json()
     const { salon_id, client_name, client_phone, client_email, service, scheduled_at, reminder_channel } = body
 
@@ -11,11 +26,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Validate phone number format
+    // Validate phone number
     const cleanPhone = client_phone.replace(/[\s\-\(\)]/g, '')
     const phoneRegex = /^\+?[1-9]\d{7,14}$/
     if (!phoneRegex.test(cleanPhone)) {
-      return NextResponse.json({ ok: false, error: 'Invalid phone number format. Please include country code e.g. +12265033362' }, { status: 400 })
+      return NextResponse.json({ 
+        ok: false, 
+        error: 'Invalid phone number. Please include country code e.g. +12265033362' 
+      }, { status: 400 })
     }
 
     // Validate email if provided
@@ -25,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient()
 
-    // Check for double booking — same salon, same time slot
+    // Check for double booking
     const { data: existing } = await supabase
       .from('appointments')
       .select('id')
@@ -35,7 +53,10 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existing) {
-      return NextResponse.json({ ok: false, error: 'This time slot is already booked. Please choose a different time.' }, { status: 409 })
+      return NextResponse.json({ 
+        ok: false, 
+        error: 'This time slot is already booked. Please choose a different time.' 
+      }, { status: 409 })
     }
 
     const { data: newApt, error } = await supabase
