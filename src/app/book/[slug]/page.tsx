@@ -136,7 +136,11 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
       const bookData = await bookResponse.json()
       if (bookData.ok) {
         await fetch('/api/notify-owner', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || '',
+          },
           body: JSON.stringify({ salon_id: salon.salon_id, client_name: form.name, client_phone: form.phone,
             service: selectedService.name, scheduled_at, appointment_id: bookData.appointment.id }),
         })
@@ -531,6 +535,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
 
       <ChatWidget
         salonName={salonName}
+        slug={slug}
         services={services}
         workingHours={workingHours}
         primaryColor={GOLD}

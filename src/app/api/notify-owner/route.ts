@@ -5,10 +5,24 @@ import { sendGmail } from '@/lib/gmail'
 import { formatInTimeZone } from 'date-fns-tz'
 
 export async function POST(request: NextRequest) {
-  try {
-    const { salon_id, client_name, client_phone, service, scheduled_at } = await request.json()
+  // Only callable with the internal API secret — prevents SMS/email spam by external callers
+  const secret = request.headers.get('x-internal-secret')
+  if (secret !== process.env.INTERNAL_API_SECRET) {
+    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+  }
 
+  try {
+    const { salon_id, client_name, client_phone, service, scheduled_at, appointment_id } = await request.json()
+
+    // Verify the appointment actually exists and belongs to this salon — prevents spoofed salon_ids
     const supabase = createServiceClient()
+    const { data: appointment } = await supabase
+      .from('appointments').select('id, salon_id')
+      .eq('id', appointment_id).eq('salon_id', salon_id).single()
+
+    if (!appointment) {
+      return NextResponse.json({ ok: false, error: 'Appointment not found' }, { status: 404 })
+    }
 
     const { data: salon } = await supabase
       .from('salons')

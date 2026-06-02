@@ -5,6 +5,7 @@ import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
 type Message = { role: 'user' | 'assistant'; content: string }
 type Props = {
   salonName: string
+  slug: string
   services: { name: string; price: number; duration_minutes: number; description: string }[]
   workingHours: { day_of_week: number; start_time: string; end_time: string; is_open: boolean }[]
   primaryColor: string
@@ -13,7 +14,7 @@ type Props = {
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 const GOLD = '#c9a84c'
 
-export default function ChatWidget({ salonName, services, workingHours }: Props) {
+export default function ChatWidget({ salonName, slug, services, workingHours }: Props) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([{
     role: 'assistant',
@@ -25,17 +26,6 @@ export default function ChatWidget({ salonName, services, workingHours }: Props)
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
-  const systemPrompt = `You are a friendly virtual assistant for ${salonName}, a premium hair salon.
-Help clients with questions about services, pricing, availability, and booking.
-
-Services:
-${services.map(s => `${s.name}: $${s.price} CAD, ${s.duration_minutes} min${s.description ? ` — ${s.description}` : ''}`).join('\n')}
-
-Hours:
-${workingHours.map(h => h.is_open ? `${DAYS[h.day_of_week]}: ${h.start_time}–${h.end_time}` : `${DAYS[h.day_of_week]}: Closed`).join('\n')}
-
-Rules: Be warm and concise (2-3 sentences). Encourage booking via the form. Never invent information. Use occasional ✦ or 💇 emojis.`
-
   async function sendMessage() {
     if (!input.trim() || loading) return
     const userMessage: Message = { role: 'user', content: input }
@@ -44,7 +34,7 @@ Rules: Be warm and concise (2-3 sentences). Encourage booking via the form. Neve
     try {
       const res = await fetch('/api/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, systemPrompt }),
+        body: JSON.stringify({ messages: newMessages, slug }),
       })
       const data = await res.json()
       setMessages([...newMessages, { role: 'assistant', content: data.message }])
