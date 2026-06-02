@@ -5,76 +5,53 @@ import { sendGmail } from '@/lib/gmail'
 import { formatInTimeZone } from 'date-fns-tz'
 
 export async function POST(request: NextRequest) {
-  // Only callable with the internal API secret — prevents SMS/email spam by external callers
   const secret = request.headers.get('x-internal-secret')
   if (secret !== process.env.INTERNAL_API_SECRET) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
-
   try {
     const { salon_id, client_name, client_phone, service, scheduled_at, appointment_id } = await request.json()
-
-    // Verify the appointment actually exists and belongs to this salon — prevents spoofed salon_ids
     const supabase = createServiceClient()
     const { data: appointment } = await supabase
       .from('appointments').select('id, salon_id')
       .eq('id', appointment_id).eq('salon_id', salon_id).single()
-
     if (!appointment) {
       return NextResponse.json({ ok: false, error: 'Appointment not found' }, { status: 404 })
     }
-
     const { data: salon } = await supabase
-      .from('salons')
-      .select('*')
-      .eq('id', salon_id)
-      .single()
-
+      .from('salons').select('*').eq('id', salon_id).single()
     if (!salon) return NextResponse.json({ ok: false, error: 'Salon not found' })
-
     const apptDate = new Date(scheduled_at)
     const dateStr = formatInTimeZone(apptDate, 'America/Toronto', 'EEEE MMM d')
     const timeStr = formatInTimeZone(apptDate, 'America/Toronto', 'h:mm a')
-
-    const message = `New booking at ${salon.name}! 🎉\n${client_name} booked ${service} on ${dateStr} at ${timeStr}.\nPhone: ${client_phone}`
-
-    // Send SMS to owner
+    const message = `New booking at ${salon.name}!\n${client_name} booked ${service} on ${dateStr} at ${timeStr}.\nPhone: ${client_phone}`
     if (salon.phone) {
-      const smsResult = await sendSMS(salon.phone, message)
-      console.log('SMS sent:', smsResult)
+      await sendSMS(salon.phone, message)
     }
-
-    // Send email to owner via Gmail
     if (salon.owner_email) {
       await sendGmail(
         salon.owner_email,
-        `New Booking: ${client_name} — ${service}`,
-        `
-        <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">
+        `New Booking: ${client_name} - ${service}`,
+        `<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">
           <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:20px;border-radius:12px;text-align:center;margin-bottom:20px">
-            <h1 style="color:white;margin:0;font-size:24px">💇 New Booking!</h1>
+            <h1 style="color:white;margin:0;font-size:24px">New Booking!</h1>
           </div>
-          <h2 style="color:#1e3a5f">You have a new appointment 🎉</h2>
+          <h2 style="color:#1e3a5f">You have a new appointment</h2>
           <div style="background:#f0f4ff;border-radius:12px;padding:16px;margin:20px 0">
-            <p style="margin:4px 0">👤 <strong>Client:</strong> ${client_name}</p>
-            <p style="margin:4px 0">📱 <strong>Phone:</strong> ${client_phone}</p>
-            <p style="margin:4px 0">✂️ <strong>Service:</strong> ${service}</p>
-            <p style="margin:4px 0">📅 <strong>Date:</strong> ${dateStr}</p>
-            <p style="margin:4px 0">⏰ <strong>Time:</strong> ${timeStr}</p>
+            <p style="margin:4px 0"><strong>Client:</strong> ${client_name}</p>
+            <p style="margin:4px 0"><strong>Phone:</strong> ${client_phone}</p>
+            <p style="margin:4px 0"><strong>Service:</strong> ${service}</p>
+            <p style="margin:4px 0"><strong>Date:</strong> ${dateStr}</p>
+            <p style="margin:4px 0"><strong>Time:</strong> ${timeStr}</p>
           </div>
-          <p>Log in to your dashboard to manage this appointment.</p>
-          <a href="https://salonping-app.vercel.app/dashboard" 
-             style="display:inline-block;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:10px 20px;border-radius:8px;text-decoration:none;margin-top:10px">
-            View Dashboard →
+          <a href="https://salonping-app.vercel.app/dashboard"
+             style="display:inline-block;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:10px 20px;border-radius:8px;text-decoration:none">
+            View Dashboard
           </a>
-        </div>
-        `
+        </div>`
       )
-      console.log('Email sent to:', salon.owner_email)
     }
-
     return NextResponse.json({ ok: true })
-
   } catch (e: any) {
     console.error('Notify owner error:', e.message)
     return NextResponse.json({ ok: false, error: e.message })

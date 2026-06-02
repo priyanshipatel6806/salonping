@@ -39,7 +39,7 @@ export default function ChatWidget({ salonName, slug, services, workingHours }: 
       const data = await res.json()
       setMessages([...newMessages, { role: 'assistant', content: data.message }])
     } catch {
-      setMessages([...newMessages, { role: 'assistant', content: 'Sorry, I'm having trouble right now. Please contact the salon directly.' }])
+      setMessages([...newMessages, { role: 'assistant', content: "Sorry, I'm having trouble right now. Please contact the salon directly." }])
     }
     setLoading(false)
   }
