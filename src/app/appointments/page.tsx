@@ -1,131 +1,111 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 
+const GOLD = '#c9a84c'
+const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+
 export default async function AppointmentsPage() {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: salon } = await supabase
-    .from('salons').select('id').eq('owner_id', user.id).single()
+  const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user.id).single()
+  const { data: appointments } = await supabase.from('appointments').select('*')
+    .eq('salon_id', salon?.id).order('scheduled_at', { ascending: false })
 
-  const { data: appointments } = await supabase
-    .from('appointments').select('*')
-    .eq('salon_id', salon?.id)
-    .order('scheduled_at', { ascending: true })
+  const upcoming = appointments?.filter(a => new Date(a.scheduled_at) >= new Date() && a.status === 'confirmed') || []
+  const past = appointments?.filter(a => new Date(a.scheduled_at) < new Date() || a.status !== 'confirmed') || []
+
+  function AptRow({ apt }: { apt: any }) {
+    const d = new Date(apt.scheduled_at)
+    const isUpcoming = d >= new Date() && apt.status === 'confirmed'
+    return (
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 24px', borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+        <div style={{display:'flex', alignItems:'center', gap:14}}>
+          <div style={{width:40, height:40, borderRadius:'50%', background:`linear-gradient(135deg,#2a1f08,${GOLD})`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:14, color:'#0a0a0a', flexShrink:0}}>
+            {apt.client_name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div style={{fontWeight:600, color:'#fff', fontSize:14}}>{apt.client_name}</div>
+            <div style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginTop:2}}>{apt.service} &middot; {apt.client_phone}</div>
+          </div>
+        </div>
+        <div style={{display:'flex', alignItems:'center', gap:16, textAlign:'right'}}>
+          <div>
+            <div style={{fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.85)'}}>
+              {d.toLocaleDateString('en-CA', { month:'short', day:'numeric', timeZone:'America/Toronto' })}
+            </div>
+            <div style={{fontSize:12, color:'rgba(255,255,255,0.4)'}}>
+              {d.toLocaleTimeString('en-CA', { hour:'2-digit', minute:'2-digit', timeZone:'America/Toronto' })}
+            </div>
+          </div>
+          <span style={{fontSize:11, fontWeight:600, padding:'4px 10px', borderRadius:100,
+            background: isUpcoming ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.06)',
+            color: isUpcoming ? GOLD : 'rgba(255,255,255,0.35)',
+            border: isUpcoming ? '1px solid rgba(201,168,76,0.3)' : '1px solid rgba(255,255,255,0.1)'}}>
+            {isUpcoming ? 'upcoming' : apt.status}
+          </span>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav style={{background:'linear-gradient(135deg,#0f172a,#1e3a5f)'}} className="px-6 py-4">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-base">💇</span>
-            </div>
-            <span className="text-white font-bold text-lg">SalonPing</span>
+    <div style={{background:'#0a0a0a', minHeight:'100vh', color:'#fff'}}>
+      <nav style={{background:'#0a0a0a', borderBottom:'1px solid rgba(201,168,76,0.15)', position:'sticky', top:0, zIndex:50}}>
+        <div style={{maxWidth:1100, margin:'0 auto', padding:'0 24px', height:60, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          <div style={{display:'flex', alignItems:'center', gap:10}}>
+            <div style={{width:32, height:32, borderRadius:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>&#9986;</div>
+            <span style={{fontWeight:800, fontSize:17, color:'#fff'}}>SalonPing</span>
           </div>
-          <div className="flex items-center gap-6">
-            <a href="/dashboard" className="text-blue-200 hover:text-white text-sm transition-colors">Dashboard</a>
-            <a href="/services" className="text-blue-200 hover:text-white text-sm transition-colors">Services</a>
-            <a href="/settings" className="text-blue-200 hover:text-white text-sm transition-colors">Settings</a>
-            <a href="/customise" className="text-blue-200 hover:text-white text-sm transition-colors">Customise</a>
-            <a href="/appointments/new" className="bg-blue-500 hover:bg-blue-400 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors">
-              + New
-            </a>
+          <div style={{display:'flex', alignItems:'center', gap:2}}>
+            {NAV_LINKS.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color:'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none'}}>{label}</a> })}
+            <a href="/appointments/new" style={{marginLeft:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>+ New</a>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="flex justify-between items-center mb-8">
+      <div style={{maxWidth:1000, margin:'0 auto', padding:'40px 24px'}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:28}}>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">All Appointments</h1>
-            <p className="text-gray-500 text-sm mt-1">{appointments?.length || 0} total appointments</p>
+            <h1 style={{fontSize:26, fontWeight:900, color:'#fff', margin:0, letterSpacing:'-0.5px'}}>Appointments</h1>
+            <p style={{fontSize:13, color:'rgba(255,255,255,0.4)', marginTop:4}}>{upcoming.length} upcoming, {past.length} past</p>
           </div>
-          <a
-            href="/appointments/new"
-            className="text-white text-sm px-5 py-2.5 rounded-xl font-medium hover:opacity-90 transition-all"
-            style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
-          >
-            + Add appointment
+          <a href="/appointments/new"
+            style={{background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'10px 20px', borderRadius:10, textDecoration:'none'}}>
+            + Add Appointment
           </a>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {appointments && appointments.length > 0 ? (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Client</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Service</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date & Time</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {appointments.map((apt) => (
-                  <tr key={apt.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0" style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}>
-                          {apt.client_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900">{apt.client_name}</div>
-                          <div className="text-xs text-gray-400">{apt.client_phone}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{apt.service}</td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">
-                        {new Date(apt.scheduled_at).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {new Date(apt.scheduled_at).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Toronto' })}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        apt.status === 'confirmed' ? 'bg-green-50 text-green-700' :
-                        apt.status === 'completed' ? 'bg-blue-50 text-blue-700' :
-                        apt.status === 'no_show' ? 'bg-red-50 text-red-700' :
-                        'bg-gray-100 text-gray-500'
-                      }`}>
-                        {apt.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {apt.status === 'confirmed' && (
-                        <form action={`/api/appointments/${apt.id}/cancel`} method="POST">
-                          <button type="submit" className="text-xs text-red-500 hover:text-red-700 font-medium hover:underline transition-colors">
-                            Cancel
-                          </button>
-                        </form>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">📅</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">No appointments yet</h3>
-              <p className="text-gray-400 text-sm mb-4">Add your first appointment to get started</p>
-              <a
-                href="/appointments/new"
-                className="inline-block text-white text-sm px-5 py-2.5 rounded-xl font-medium hover:opacity-90 transition-all"
-                style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
-              >
-                + Add appointment
-              </a>
+        {upcoming.length > 0 && (
+          <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, overflow:'hidden', marginBottom:20}}>
+            <div style={{padding:'16px 24px', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+              <h2 style={{fontSize:14, fontWeight:700, color:GOLD, margin:0}}>Upcoming</h2>
             </div>
-          )}
-        </div>
+            {upcoming.map((apt: any) => <AptRow key={apt.id} apt={apt} />)}
+          </div>
+        )}
+
+        {past.length > 0 && (
+          <div style={{background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, overflow:'hidden'}}>
+            <div style={{padding:'16px 24px', borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+              <h2 style={{fontSize:14, fontWeight:700, color:'rgba(255,255,255,0.4)', margin:0}}>Past</h2>
+            </div>
+            {past.map((apt: any) => <AptRow key={apt.id} apt={apt} />)}
+          </div>
+        )}
+
+        {!appointments?.length && (
+          <div style={{textAlign:'center', padding:80, background:'rgba(255,255,255,0.02)', borderRadius:16, border:'1px dashed rgba(255,255,255,0.1)'}}>
+            <div style={{fontSize:40, marginBottom:16}}>&#128197;</div>
+            <h3 style={{color:'#fff', margin:'0 0 8px', fontWeight:700}}>No appointments yet</h3>
+            <p style={{color:'rgba(255,255,255,0.4)', fontSize:13, marginBottom:20}}>Add your first appointment or share your booking link</p>
+            <a href="/appointments/new"
+              style={{background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'10px 22px', borderRadius:10, textDecoration:'none', display:'inline-block'}}>
+              + Add Appointment
+            </a>
+          </div>
+        )}
       </div>
     </div>
   )

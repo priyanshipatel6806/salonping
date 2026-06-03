@@ -1,249 +1,157 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Trash2, Plus, Clock, DollarSign } from 'lucide-react'
 
-type Service = {
-  id: string
-  name: string
-  duration_minutes: number
-  price: number
-  description: string
-  active: boolean
-}
+const GOLD = '#c9a84c'
+
+type Service = { id: string; name: string; duration_minutes: number; price: number; description: string; active: boolean }
+
+const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({
-    name: '',
-    duration_minutes: 60,
-    price: 0,
-    description: '',
-  })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState({ name:'', duration_minutes:60, price:0, description:'' })
 
   useEffect(() => { loadServices() }, [])
 
   async function loadServices() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: salon } = await supabase
-      .from('salons').select('id').eq('owner_id', user?.id).single()
-    const { data } = await supabase
-      .from('services').select('*')
-      .eq('salon_id', salon?.id)
-      .order('created_at')
+    const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user?.id).single()
+    const { data } = await supabase.from('services').select('*').eq('salon_id', salon?.id).order('name')
     setServices(data || [])
     setLoading(false)
   }
 
-  async function addService(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSave() {
+    if (!form.name) return
     setSaving(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: salon } = await supabase
-      .from('salons').select('id').eq('owner_id', user?.id).single()
-    await supabase.from('services').insert({
-      salon_id: salon?.id,
-      ...form,
-    })
-    setForm({ name: '', duration_minutes: 60, price: 0, description: '' })
-    setShowForm(false)
+    const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user?.id).single()
+    if (editingId) {
+      await supabase.from('services').update({ ...form, active: true }).eq('id', editingId)
+    } else {
+      await supabase.from('services').insert({ ...form, salon_id: salon?.id, active: true })
+    }
+    setForm({ name:'', duration_minutes:60, price:0, description:'' })
+    setShowForm(false); setEditingId(null)
+    await loadServices()
     setSaving(false)
-    loadServices()
   }
 
-  async function deleteService(id: string) {
+  async function handleDelete(id: string) {
     const supabase = createClient()
     await supabase.from('services').delete().eq('id', id)
-    loadServices()
+    setServices(services.filter(s => s.id !== id))
   }
 
-  async function toggleService(id: string, active: boolean) {
-    const supabase = createClient()
-    await supabase.from('services').update({ active }).eq('id', id)
-    loadServices()
+  function startEdit(s: Service) {
+    setForm({ name: s.name, duration_minutes: s.duration_minutes, price: s.price, description: s.description })
+    setEditingId(s.id); setShowForm(true)
   }
+
+  const inputStyle = { width:'100%', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'10px 14px', fontSize:14, color:'#fff', outline:'none', boxSizing:'border-box' as const }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav style={{background:'linear-gradient(135deg,#0f172a,#1e3a5f)'}} className="px-6 py-4">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-base">💇</span>
-            </div>
-            <span className="text-white font-bold text-lg">SalonPing</span>
+    <div style={{background:'#0a0a0a', minHeight:'100vh', color:'#fff'}}>
+      <nav style={{background:'#0a0a0a', borderBottom:'1px solid rgba(201,168,76,0.15)', position:'sticky', top:0, zIndex:50}}>
+        <div style={{maxWidth:1100, margin:'0 auto', padding:'0 24px', height:60, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          <div style={{display:'flex', alignItems:'center', gap:10}}>
+            <div style={{width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#2a1f08,#c9a84c)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>&#9986;</div>
+            <span style={{fontWeight:800, fontSize:17, color:'#fff'}}>SalonPing</span>
           </div>
-          <div className="flex items-center gap-6">
-            <a href="/dashboard" className="text-blue-200 hover:text-white text-sm transition-colors">Dashboard</a>
-            <a href="/appointments" className="text-blue-200 hover:text-white text-sm transition-colors">Appointments</a>
-            <a href="/services" className="text-blue-200 hover:text-white text-sm transition-colors">Services</a>
-            <a href="/hours" className="text-blue-200 hover:text-white text-sm transition-colors">Hours</a>
-            <a href="/settings" className="text-blue-200 hover:text-white text-sm transition-colors">Settings</a>
-            <a href="/customise" className="text-blue-200 hover:text-white text-sm transition-colors">Customise</a>
+          <div style={{display:'flex', alignItems:'center', gap:2}}>
+            {NAV_LINKS.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color:'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none'}}>{label}</a> })}
+            <a href="/appointments/new" style={{marginLeft:8, background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>+ New</a>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-6 py-8">
-        <div className="flex justify-between items-center mb-8">
+      <div style={{maxWidth:900, margin:'0 auto', padding:'40px 24px'}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:28}}>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Services</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage the services clients can book</p>
+            <h1 style={{fontSize:26, fontWeight:900, color:'#fff', margin:0, letterSpacing:'-0.5px'}}>Services</h1>
+            <p style={{fontSize:13, color:'rgba(255,255,255,0.4)', marginTop:4}}>{services.length} services in your menu</p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 text-white text-sm px-4 py-2.5 rounded-xl font-medium hover:opacity-90 transition-all"
-            style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
-          >
-            <Plus size={16} />
-            Add Service
+          <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name:'', duration_minutes:60, price:0, description:'' }) }}
+            style={{background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'10px 20px', borderRadius:10, border:'none', cursor:'pointer'}}>
+            + Add Service
           </button>
         </div>
 
-        {/* Add service form */}
         {showForm && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-            <h2 className="font-bold text-gray-900 mb-4">New Service</h2>
-            <form onSubmit={addService} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Service Name</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({...form, name: e.target.value})}
-                    required
-                    placeholder="e.g. Haircut"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Price (CAD)</label>
-                  <div className="relative">
-                    <DollarSign size={14} className="absolute left-3 top-3.5 text-gray-400" />
-                    <input
-                      type="number"
-                      value={form.price}
-                      onChange={(e) => setForm({...form, price: parseFloat(e.target.value)})}
-                      required
-                      min="0"
-                      step="0.01"
-                      placeholder="45.00"
-                      className="w-full border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
-                </div>
+          <div style={{background:'rgba(201,168,76,0.06)', border:'1px solid rgba(201,168,76,0.25)', borderRadius:16, padding:24, marginBottom:24}}>
+            <h3 style={{fontSize:15, fontWeight:700, color:GOLD, margin:'0 0 18px'}}>{editingId ? 'Edit Service' : 'New Service'}</h3>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14}}>
+              <div>
+                <label style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.6)', display:'block', marginBottom:6}}>Service Name</label>
+                <input style={inputStyle} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Haircut & Style" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Duration (minutes)</label>
-                  <div className="relative">
-                    <Clock size={14} className="absolute left-3 top-3.5 text-gray-400" />
-                    <select
-                      value={form.duration_minutes}
-                      onChange={(e) => setForm({...form, duration_minutes: parseInt(e.target.value)})}
-                      className="w-full border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    >
-                      {[15,30,45,60,75,90,105,120,150,180].map(m => (
-                        <option key={m} value={m}>{m} minutes</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description (optional)</label>
-                  <input
-                    type="text"
-                    value={form.description}
-                    onChange={(e) => setForm({...form, description: e.target.value})}
-                    placeholder="Brief description"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                  />
-                </div>
+              <div>
+                <label style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.6)', display:'block', marginBottom:6}}>Duration (minutes)</label>
+                <input style={inputStyle} type="number" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: parseInt(e.target.value)})} />
               </div>
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="text-white text-sm px-5 py-2.5 rounded-xl font-medium hover:opacity-90 disabled:opacity-50"
-                  style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
-                >
-                  {saving ? 'Saving...' : 'Save Service'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="text-gray-600 text-sm px-5 py-2.5 rounded-xl font-medium bg-gray-100 hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
+              <div>
+                <label style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.6)', display:'block', marginBottom:6}}>Price (CAD)</label>
+                <input style={inputStyle} type="number" value={form.price} onChange={e => setForm({...form, price: parseFloat(e.target.value)})} />
               </div>
-            </form>
+              <div>
+                <label style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.6)', display:'block', marginBottom:6}}>Description (optional)</label>
+                <input style={inputStyle} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Short description..." />
+              </div>
+            </div>
+            <div style={{display:'flex', gap:10}}>
+              <button onClick={handleSave} disabled={!form.name || saving}
+                style={{background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'10px 22px', borderRadius:10, border:'none', cursor:'pointer', opacity: saving ? 0.6 : 1}}>
+                {saving ? 'Saving...' : editingId ? 'Update Service' : 'Add Service'}
+              </button>
+              <button onClick={() => { setShowForm(false); setEditingId(null) }}
+                style={{background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.6)', fontSize:13, padding:'10px 16px', borderRadius:10, border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer'}}>
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Services list */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {loading ? (
-            <div className="text-center py-12 text-gray-400 text-sm">Loading...</div>
-          ) : services.length > 0 ? (
-            <div className="divide-y divide-gray-50">
-              {services.map((service) => (
-                <div key={service.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-semibold text-sm" style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}>
-                      {service.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 text-sm">{service.name}</div>
-                      <div className="text-xs text-gray-400 flex items-center gap-2 mt-0.5">
-                        <span className="flex items-center gap-1"><Clock size={10} />{service.duration_minutes} min</span>
-                        <span>•</span>
-                        <span>${service.price} CAD</span>
-                        {service.description && <><span>•</span><span>{service.description}</span></>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => toggleService(service.id, !service.active)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${service.active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}
-                    >
-                      {service.active ? 'Active' : 'Hidden'}
-                    </button>
-                    <button
-                      onClick={() => deleteService(service.id)}
-                      className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+        {loading ? (
+          <div style={{textAlign:'center', padding:60, color:'rgba(255,255,255,0.3)'}}>Loading...</div>
+        ) : services.length === 0 ? (
+          <div style={{textAlign:'center', padding:80, background:'rgba(255,255,255,0.02)', borderRadius:16, border:'1px dashed rgba(255,255,255,0.1)'}}>
+            <div style={{fontSize:40, marginBottom:16}}>&#9988;</div>
+            <h3 style={{color:'#fff', margin:'0 0 8px', fontWeight:700}}>No services yet</h3>
+            <p style={{color:'rgba(255,255,255,0.4)', fontSize:13}}>Add your first service to start accepting bookings</p>
+          </div>
+        ) : (
+          <div style={{display:'flex', flexDirection:'column', gap:10}}>
+            {services.map(s => (
+              <div key={s.id} style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700, color:'#fff', fontSize:15, marginBottom:4}}>{s.name}</div>
+                  {s.description && <div style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:6}}>{s.description}</div>}
+                  <div style={{display:'flex', gap:16}}>
+                    <span style={{fontSize:12, color:'rgba(255,255,255,0.4)'}}>&#9201; {s.duration_minutes} min</span>
+                    <span style={{fontSize:12, fontWeight:700, color:GOLD}}>${s.price} CAD</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">✂️</span>
+                <div style={{display:'flex', gap:8, marginLeft:20}}>
+                  <button onClick={() => startEdit(s)}
+                    style={{padding:'7px 14px', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.3)', borderRadius:8, color:GOLD, fontSize:12, fontWeight:600, cursor:'pointer'}}>
+                    Edit
+                  </button>
+                  <button onClick={() => handleDelete(s.id)}
+                    style={{padding:'7px 14px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:8, color:'#f87171', fontSize:12, fontWeight:600, cursor:'pointer'}}>
+                    Delete
+                  </button>
+                </div>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">No services yet</h3>
-              <p className="text-gray-400 text-sm mb-4">Add your first service to enable client self-booking</p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 text-white text-sm px-5 py-2.5 rounded-xl font-medium hover:opacity-90"
-                style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
-              >
-                <Plus size={16} />
-                Add first service
-              </button>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

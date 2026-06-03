@@ -2,162 +2,93 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 
+const GOLD = '#c9a84c'
+const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [form, setForm] = useState({ name: '', phone: '', email: '' })
+  const [form, setForm] = useState({ name:'', phone:'', email:'' })
 
   useEffect(() => {
-    async function loadSalon() {
+    async function load() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      const { data: salon } = await supabase
-        .from('salons').select('*').eq('owner_id', user?.id).single()
+      const { data: salon } = await supabase.from('salons').select('*').eq('owner_id', user?.id).single()
       if (salon) setForm({ name: salon.name || '', phone: salon.phone || '', email: salon.owner_email || '' })
     }
-    loadSalon()
+    load()
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault(); setLoading(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('salons')
-      .update({ name: form.name, phone: form.phone, owner_email: form.email })
-      .eq('owner_id', user?.id)
-    setSaved(true)
-    setLoading(false)
-    setTimeout(() => setSaved(false), 3000)
+    await supabase.from('salons').update({ name: form.name, phone: form.phone, owner_email: form.email }).eq('owner_id', user?.id)
+    setSaved(true); setLoading(false)
+    setTimeout(() => setSaved(false), 2000)
   }
 
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
+
+  const inputStyle = { width:'100%', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'12px 14px', fontSize:14, color:'#fff', outline:'none', boxSizing:'border-box' as const }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav style={{background:'linear-gradient(135deg,#0f172a,#1e3a5f)'}} className="px-6 py-4">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-base">💇</span>
-            </div>
-            <span className="text-white font-bold text-lg">SalonPing</span>
+    <div style={{background:'#0a0a0a', minHeight:'100vh', color:'#fff'}}>
+      <nav style={{background:'#0a0a0a', borderBottom:'1px solid rgba(201,168,76,0.15)', position:'sticky', top:0, zIndex:50}}>
+        <div style={{maxWidth:1100, margin:'0 auto', padding:'0 24px', height:60, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          <div style={{display:'flex', alignItems:'center', gap:10}}>
+            <div style={{width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#2a1f08,#c9a84c)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>&#9986;</div>
+            <span style={{fontWeight:800, fontSize:17, color:'#fff'}}>SalonPing</span>
           </div>
-          <div className="flex items-center gap-6">
-            <a href="/dashboard" className="text-blue-200 hover:text-white text-sm transition-colors">Dashboard</a>
-            <a href="/appointments" className="text-blue-200 hover:text-white text-sm transition-colors">Appointments</a>
-            <a href="/services" className="text-blue-200 hover:text-white text-sm transition-colors">Services</a>
-            <a href="/hours" className="text-blue-200 hover:text-white text-sm transition-colors">Hours</a>
-            <a href="/customise" className="text-blue-200 hover:text-white text-sm transition-colors">Customise</a>
+          <div style={{display:'flex', alignItems:'center', gap:2}}>
+            {NAV_LINKS.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color:'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none'}}>{label}</a> })}
+            <a href="/appointments/new" style={{marginLeft:8, background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>+ New</a>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-2xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage your salon information and preferences</p>
-        </div>
+      <div style={{maxWidth:600, margin:'0 auto', padding:'40px 24px'}}>
+        <h1 style={{fontSize:26, fontWeight:900, color:'#fff', margin:'0 0 4px', letterSpacing:'-0.5px'}}>Settings</h1>
+        <p style={{fontSize:13, color:'rgba(255,255,255,0.4)', marginBottom:28}}>Manage your salon profile</p>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-5">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}>
-              <span className="text-lg">🏪</span>
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900">Salon Information</h2>
-              <p className="text-xs text-gray-400">This appears in your SMS reminders</p>
+        <form onSubmit={handleSubmit}>
+          <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:24, marginBottom:16}}>
+            <h2 style={{fontSize:15, fontWeight:700, color:GOLD, margin:'0 0 20px'}}>Salon Details</h2>
+            <div style={{display:'flex', flexDirection:'column', gap:16}}>
+              {[
+                { key:'name', label:'Salon Name', type:'text', ph:'Priya's Hair Studio' },
+                { key:'phone', label:'Your Phone Number', type:'tel', ph:'+1 226 555 0123', hint:'Used to receive booking notifications via SMS' },
+                { key:'email', label:'Your Email Address', type:'email', ph:'you@example.com', hint:'Used to receive booking notifications via email' },
+              ].map(f => (
+                <div key={f.key}>
+                  <label style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.6)', display:'block', marginBottom:6}}>{f.label}</label>
+                  <input type={f.type} value={(form as any)[f.key]}
+                    onChange={e => setForm({...form, [f.key]: e.target.value})}
+                    placeholder={f.ph} style={inputStyle} />
+                  {f.hint && <p style={{fontSize:11, color:'rgba(255,255,255,0.3)', marginTop:4}}>{f.hint}</p>}
+                </div>
+              ))}
             </div>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Salon Name</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-                placeholder="My Beautiful Salon"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your Phone Number</label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="+1 226 555 0123"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all"
-              />
-              <p className="text-xs text-gray-400 mt-1.5">We'll send you an SMS when clients book online</p>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="you@example.com"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all"
-              />
-              <p className="text-xs text-gray-400 mt-1.5">We'll send you an email when clients book online</p>
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
-              style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
-            >
-              {loading ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
-            </button>
-          </form>
-        </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-5">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}>
-              <span className="text-lg">💬</span>
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900">SMS Reminders</h2>
-              <p className="text-xs text-gray-400">Sent automatically to your clients</p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: '48h', color: 'bg-blue-50 text-blue-700 border-blue-100', msg: 'Hi [Name]! Friendly reminder: your [Service] appointment at [Salon] is in 2 days. Reply STOP to unsubscribe.' },
-              { label: '24h', color: 'bg-green-50 text-green-700 border-green-100', msg: "Hi [Name]! Your [Service] is TOMORROW. We've reserved your spot — see you then! Reply STOP to unsubscribe." },
-              { label: '2h', color: 'bg-purple-50 text-purple-700 border-purple-100', msg: 'See you in 2 hours [Name]! Your [Service] is at [Time] with [Salon]. Reply STOP to unsubscribe.' },
-            ].map((item) => (
-              <div key={item.label} className={`flex gap-4 p-4 rounded-xl border ${item.color}`}>
-                <span className="font-bold text-sm w-8 flex-shrink-0">{item.label}</span>
-                <p className="text-sm leading-relaxed">{item.msg}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+          <button type="submit" disabled={loading}
+            style={{width:'100%', background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:14, padding:'13px', borderRadius:12, border:'none', cursor:'pointer', opacity: loading ? 0.7 : 1}}>
+            {loading ? 'Saving...' : saved ? '&#10003; Saved!' : 'Save Settings'}
+          </button>
+        </form>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}>
-              <span className="text-lg">⭐</span>
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900">Your Plan</h2>
-              <p className="text-xs text-gray-400">Current subscription</p>
-            </div>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="font-semibold text-gray-900">Free Plan</p>
-              <p className="text-xs text-gray-500 mt-0.5">20 SMS reminders per month</p>
-            </div>
-            <button
-              className="text-white text-sm px-5 py-2.5 rounded-xl font-semibold hover:opacity-90 transition-all"
-              style={{background:'linear-gradient(135deg,#1e3a5f,#2563eb)'}}
-            >
-              Upgrade — $29/mo
-            </button>
-          </div>
+        <div style={{marginTop:32, padding:20, background:'rgba(239,68,68,0.05)', border:'1px solid rgba(239,68,68,0.15)', borderRadius:14}}>
+          <h3 style={{fontSize:14, fontWeight:700, color:'#f87171', margin:'0 0 8px'}}>Sign out</h3>
+          <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14}}>Sign out of your SalonPing account</p>
+          <button onClick={handleSignOut}
+            style={{padding:'9px 20px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:9, color:'#f87171', fontSize:13, fontWeight:600, cursor:'pointer'}}>
+            Sign out
+          </button>
         </div>
       </div>
     </div>
