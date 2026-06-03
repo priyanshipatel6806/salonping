@@ -251,9 +251,24 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                 <span className="text-white font-medium">{row.value}</span>
               </div>
             ))}
-            <div className="pt-2 border-t flex justify-between text-sm font-bold" style={{borderColor:'rgba(201,168,76,0.2)'}}>
-              <span style={{color:GOLD}}>Total</span>
-              <span className="text-white">${selectedService?.price} CAD</span>
+            <div className="pt-2 border-t" style={{borderColor:'rgba(201,168,76,0.2)'}}>
+              {depositAmount > 0 ? (
+                <>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span style={{color:'rgba(255,255,255,0.45)'}}>Deposit paid</span>
+                    <span style={{color:GOLD, fontWeight:700}}>${depositAmount} CAD</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-bold">
+                    <span style={{color:GOLD}}>Remaining at salon</span>
+                    <span className="text-white">${(selectedService?.price || 0) - depositAmount} CAD</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between text-sm font-bold">
+                  <span style={{color:GOLD}}>Total</span>
+                  <span className="text-white">${selectedService?.price} CAD</span>
+                </div>
+              )}
             </div>
           </div>
           <div className="rounded-2xl px-5 py-4 animate-fade-in-up" style={{animationDelay:'0.5s',
