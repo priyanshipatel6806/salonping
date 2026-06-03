@@ -172,21 +172,27 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     const paid = searchParams.get('paid')
     const sessionId = searchParams.get('session_id')
     if (paid === 'true' && sessionId) {
-      // Restore booking details saved before Stripe redirect
-      try {
-        const saved = sessionStorage.getItem('salonping_booking')
-        if (saved) {
-          const { service, date, slot } = JSON.parse(saved)
-          setSelectedService(service)
-          setSelectedDate(new Date(date))
-          setSelectedSlot(slot)
-          sessionStorage.removeItem('salonping_booking')
-        }
-      } catch {}
+      // Fetch booking details from Stripe session metadata
+      fetch(`/api/stripe/session?session_id=${sessionId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            const scheduledAt = new Date(data.scheduled_at)
+            // Build a minimal service object for the confirmation screen
+            const svc = services.find((s: any) => s.name === data.service) || { name: data.service, duration_minutes: 0, price: 0 }
+            setSelectedService(svc as any)
+            setSelectedDate(scheduledAt)
+            // Build slot label from scheduled_at
+            const h = scheduledAt.getHours(), m = scheduledAt.getMinutes()
+            const label = `${h > 12 ? h-12 : h === 0 ? 12 : h}:${m.toString().padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`
+            setSelectedSlot({ time: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`, label })
+          }
+        })
+        .catch(() => {})
       setBooked(true)
     }
     if (searchParams.get('cancelled') === 'true') setBookingError('Payment was cancelled. Please try again.')
-  }, [searchParams])
+  }, [searchParams, services])
 
   const accentColor = salon?.primary_color || GOLD
   const { firstDay, daysInMonth } = salon ? getDaysInMonth(currentMonth) : { firstDay:0, daysInMonth:0 }
