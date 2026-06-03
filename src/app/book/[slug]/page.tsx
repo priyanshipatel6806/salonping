@@ -124,6 +124,12 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     // --- Deposit flow: redirect to Stripe ---
     if (depositAmount > 0) {
       try {
+        // Save booking details so we can restore them after Stripe redirect
+        sessionStorage.setItem('salonping_booking', JSON.stringify({
+          service: { ...selectedService },
+          date: selectedDate.toISOString(),
+          slot: selectedSlot,
+        }))
         const res = await fetch('/api/stripe/checkout', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ salon_id: salon.salon_id, client_name: form.name, client_phone: form.phone,
@@ -165,7 +171,20 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   useEffect(() => {
     const paid = searchParams.get('paid')
     const sessionId = searchParams.get('session_id')
-    if (paid === 'true' && sessionId) setBooked(true)
+    if (paid === 'true' && sessionId) {
+      // Restore booking details saved before Stripe redirect
+      try {
+        const saved = sessionStorage.getItem('salonping_booking')
+        if (saved) {
+          const { service, date, slot } = JSON.parse(saved)
+          setSelectedService(service)
+          setSelectedDate(new Date(date))
+          setSelectedSlot(slot)
+          sessionStorage.removeItem('salonping_booking')
+        }
+      } catch {}
+      setBooked(true)
+    }
     if (searchParams.get('cancelled') === 'true') setBookingError('Payment was cancelled. Please try again.')
   }, [searchParams])
 

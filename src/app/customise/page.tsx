@@ -58,15 +58,24 @@ export default function CustomisePage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user?.id).single()
-    // If custom_slug provided, update the main slug
-    const updateData: any = { ...form }
+    // Build update payload explicitly
+    const updateData: any = {
+      headline: form.headline,
+      description: form.description,
+      primary_color: form.primary_color,
+      google_review_link: form.google_review_link,
+      logo_url: form.logo_url,
+      cover_photo_url: form.cover_photo_url,
+      stripe_deposit_amount: Number(form.stripe_deposit_amount) || 0,
+    }
     if (form.custom_slug && form.custom_slug !== slug) {
       const { data: existing } = await supabase.from('booking_settings').select('id').eq('slug', form.custom_slug).single()
       if (existing) { setSlugError('This URL is already taken. Try a different one.'); setSaving(false); return }
       updateData.slug = form.custom_slug
       setSlug(form.custom_slug)
     }
-    await supabase.from('booking_settings').update(updateData).eq('salon_id', salon?.id)
+    const { error: saveError } = await supabase.from('booking_settings').update(updateData).eq('salon_id', salon?.id)
+    if (saveError) console.error('Save error:', saveError)
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
