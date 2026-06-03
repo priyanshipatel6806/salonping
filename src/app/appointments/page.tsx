@@ -13,12 +13,23 @@ export default async function AppointmentsPage() {
   const { data: appointments } = await supabase.from('appointments').select('*')
     .eq('salon_id', salon?.id).order('scheduled_at', { ascending: false })
 
-  const upcoming = appointments?.filter(a => new Date(a.scheduled_at) >= new Date() && a.status === 'confirmed') || []
-  const past = appointments?.filter(a => new Date(a.scheduled_at) < new Date() || a.status !== 'confirmed') || []
+  const now = new Date()
+  const upcoming = appointments?.filter(a => new Date(a.scheduled_at) >= now && a.status === 'confirmed') || []
+  const past = appointments?.filter(a => new Date(a.scheduled_at) < now || a.status !== 'confirmed') || []
+
+  const statusStyle: Record<string, { bg: string; color: string; border: string; label: string }> = {
+    confirmed: { bg: 'rgba(201,168,76,0.12)', color: GOLD, border: 'rgba(201,168,76,0.3)', label: 'upcoming' },
+    cancelled:  { bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)', border: 'rgba(255,255,255,0.1)', label: 'cancelled' },
+    no_show:    { bg: 'rgba(239,68,68,0.1)', color: '#f87171', border: 'rgba(239,68,68,0.3)', label: 'no-show' },
+    completed:  { bg: 'rgba(34,197,94,0.1)', color: '#4ade80', border: 'rgba(34,197,94,0.3)', label: 'completed' },
+  }
 
   function AptRow({ apt }: { apt: any }) {
     const d = new Date(apt.scheduled_at)
-    const isUpcoming = d >= new Date() && apt.status === 'confirmed'
+    const isPastConfirmed = d < now && apt.status === 'confirmed'
+    const isUpcoming = d >= now && apt.status === 'confirmed'
+    const style = isUpcoming ? statusStyle.confirmed : (statusStyle[apt.status] || statusStyle.cancelled)
+
     return (
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 24px', borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
         <div style={{display:'flex', alignItems:'center', gap:14}}>
@@ -30,8 +41,8 @@ export default async function AppointmentsPage() {
             <div style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginTop:2}}>{apt.service} &middot; {apt.client_phone}</div>
           </div>
         </div>
-        <div style={{display:'flex', alignItems:'center', gap:16, textAlign:'right'}}>
-          <div>
+        <div style={{display:'flex', alignItems:'center', gap:10, textAlign:'right'}}>
+          <div style={{marginRight:6}}>
             <div style={{fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.85)'}}>
               {d.toLocaleDateString('en-CA', { month:'short', day:'numeric', timeZone:'America/Toronto' })}
             </div>
@@ -40,11 +51,25 @@ export default async function AppointmentsPage() {
             </div>
           </div>
           <span style={{fontSize:11, fontWeight:600, padding:'4px 10px', borderRadius:100,
-            background: isUpcoming ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.06)',
-            color: isUpcoming ? GOLD : 'rgba(255,255,255,0.35)',
-            border: isUpcoming ? '1px solid rgba(201,168,76,0.3)' : '1px solid rgba(255,255,255,0.1)'}}>
-            {isUpcoming ? 'upcoming' : apt.status}
+            background: style.bg, color: style.color, border: `1px solid ${style.border}`}}>
+            {style.label}
           </span>
+          {isPastConfirmed && (
+            <form action={`/api/appointments/${apt.id}/no-show`} method="POST" style={{display:'inline'}}>
+              <button type="submit"
+                style={{fontSize:11, padding:'4px 10px', borderRadius:6, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)', color:'#f87171', cursor:'pointer', fontWeight:600, whiteSpace:'nowrap'}}>
+                No-show
+              </button>
+            </form>
+          )}
+          {isUpcoming && (
+            <form action={`/api/appointments/${apt.id}/cancel`} method="POST" style={{display:'inline'}}>
+              <button type="submit"
+                style={{fontSize:11, padding:'4px 10px', borderRadius:6, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontWeight:600}}>
+                Cancel
+              </button>
+            </form>
+          )}
         </div>
       </div>
     )

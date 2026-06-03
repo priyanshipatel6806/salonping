@@ -1,7 +1,8 @@
 'use client'
 import ChatWidget from './chat-widget'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useSearchParams } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Clock, Check, Sparkles } from 'lucide-react'
 
 type Service = { id: string; name: string; duration_minutes: number; price: number; description: string }
@@ -54,6 +55,8 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   const [booked, setBooked] = useState(false)
   const [loading, setLoading] = useState(true)
   const [bookingError, setBookingError] = useState('')
+  const [depositAmount, setDepositAmount] = useState(0)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     params.then(p => { setSlug(p.slug); loadSalon(p.slug) })
@@ -66,6 +69,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
       .eq('slug', slugVal).single()
     if (!settings) { setLoading(false); return }
     setSalon(settings)
+    setDepositAmount(settings.stripe_deposit_amount || 0)
     const { data: svcs } = await supabase.from('services').select('*')
       .eq('salon_id', settings.salon_id).eq('active', true).order('name')
     setServices(svcs || [])
@@ -116,6 +120,25 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     const scheduled_at = new Date(
       `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}T${selectedSlot.time}:00`
     ).toISOString()
+
+    // --- Deposit flow: redirect to Stripe ---
+    if (depositAmount > 0) {
+      try {
+        const res = await fetch('/api/stripe/checkout', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ salon_id: salon.salon_id, client_name: form.name, client_phone: form.phone,
+            client_email: form.email, service: selectedService.name, scheduled_at,
+            reminder_channel: form.reminder_channel, slug }),
+        })
+        const data = await res.json()
+        if (data.url) { window.location.href = data.url; return }
+        setBookingError(data.error || 'Could not start payment. Please try again.')
+      } catch { setBookingError('Something went wrong. Please try again.') }
+      setBooking(false)
+      return
+    }
+
+    // --- No deposit: book directly ---
     try {
       const bookResponse = await fetch('/api/book', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -137,6 +160,14 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     } catch { setBookingError('Something went wrong. Please try again.') }
     setBooking(false)
   }
+
+  // Handle return from Stripe after successful payment
+  useEffect(() => {
+    const paid = searchParams.get('paid')
+    const sessionId = searchParams.get('session_id')
+    if (paid === 'true' && sessionId) setBooked(true)
+    if (searchParams.get('cancelled') === 'true') setBookingError('Payment was cancelled. Please try again.')
+  }, [searchParams])
 
   const accentColor = salon?.primary_color || GOLD
   const { firstDay, daysInMonth } = salon ? getDaysInMonth(currentMonth) : { firstDay:0, daysInMonth:0 }
@@ -232,10 +263,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
             <h1 className="text-2xl font-bold text-white leading-tight">{salonName}</h1>
             {salon.headline && <p className="text-sm mt-1" style={{color:'rgba(255,255,255,0.55)'}}>{salon.headline}</p>}
             <div className="flex items-center gap-1.5 mt-2">
-              {[...Array(5)].map((_,i) => (
-                <svg key={i} width="12" height="12" viewBox="0 0 12 12" fill={GOLD}><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9.5,11 6,9 2.5,11 3.5,7.5 1,5 4.5,4.5"/></svg>
-              ))}
-              <span className="text-xs ml-1" style={{color:'rgba(255,255,255,0.4)'}}>Premium experience</span>
+              <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Book your appointment online · 24/7</span>
             </div>
           </div>
         </div>
@@ -405,6 +433,12 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                   <span style={{color:GOLD}}>Total</span>
                   <span className="text-white">${selectedService?.price} CAD</span>
                 </div>
+                {depositAmount > 0 && (
+                  <div className="flex justify-between text-sm mt-2">
+                    <span style={{color:'rgba(255,255,255,0.4)'}}>Deposit due now</span>
+                    <span style={{color:GOLD, fontWeight:700}}>${depositAmount} CAD</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="rounded-2xl p-6" style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.08)'}}>
@@ -447,7 +481,12 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                 <button onClick={confirmBooking} disabled={!form.name || !form.phone || booking}
                   className="w-full py-4 rounded-xl font-bold text-base transition-all hover:opacity-90 disabled:opacity-40"
                   style={{background:`linear-gradient(135deg,#2a1f08,${GOLD})`,color:'#0a0a0a'}}>
-                  {booking ? 'Confirming your booking...' : 'Confirm Booking'}
+                  {booking
+                    ? (depositAmount > 0 ? 'Redirecting to payment...' : 'Confirming your booking...')
+                    : depositAmount > 0
+                      ? `Pay $${depositAmount} Deposit & Confirm`
+                      : 'Confirm Booking'
+                  }
                 </button>
               </div>
             </div>

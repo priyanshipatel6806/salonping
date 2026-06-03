@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase-server'
+import { randomUUID } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +39,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'This time slot is already booked. Please choose a different time.' }, { status: 409 })
     }
 
+    const cancel_token = randomUUID()
+
     const { data: newApt, error } = await supabase
       .from('appointments')
       .insert({
@@ -49,6 +52,7 @@ export async function POST(request: NextRequest) {
         scheduled_at,
         reminder_channel,
         booked_online: true,
+        cancel_token,
       })
       .select()
       .single()

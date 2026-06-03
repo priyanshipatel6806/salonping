@@ -22,14 +22,14 @@ export default async function ClientsPage() {
   const clientMap: Record<string, {
     name: string; phone: string; email: string;
     visits: number; lastVisit: string; services: string[]; totalSpend: number;
-    upcoming: number; channel: string;
+    upcoming: number; channel: string; noShows: number;
   }> = {}
 
   for (const apt of appointments || []) {
     const key = apt.client_phone
     if (!clientMap[key]) {
       clientMap[key] = { name: apt.client_name, phone: apt.client_phone, email: apt.client_email || '',
-        visits: 0, lastVisit: apt.scheduled_at, services: [], totalSpend: 0, upcoming: 0, channel: apt.reminder_channel || 'sms' }
+        visits: 0, lastVisit: apt.scheduled_at, services: [], totalSpend: 0, upcoming: 0, channel: apt.reminder_channel || 'sms', noShows: 0 }
     }
     const c = clientMap[key]
     if (apt.status === 'confirmed') {
@@ -38,6 +38,7 @@ export default async function ClientsPage() {
       if (!c.services.includes(apt.service)) c.services.push(apt.service)
       if (new Date(apt.scheduled_at) >= new Date()) c.upcoming++
     }
+    if (apt.status === 'no_show') c.noShows++
     if (new Date(apt.scheduled_at) > new Date(c.lastVisit)) c.lastVisit = apt.scheduled_at
   }
 
@@ -67,12 +68,13 @@ export default async function ClientsPage() {
         </div>
 
         {/* Stats */}
-        <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:28}}>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14, marginBottom:28}}>
           {[
             {label:'Total Clients', val:clients.length, sub:'all time'},
             {label:'Repeat Clients', val:repeatClients, sub:`${clients.length ? Math.round(repeatClients/clients.length*100) : 0}% retention`},
             {label:'Total Revenue', val:`$${totalRevenue.toLocaleString()}`, sub:'from bookings'},
             {label:'Avg. Visits', val: clients.length ? (clients.reduce((s,c)=>s+c.visits,0)/clients.length).toFixed(1) : '0', sub:'per client'},
+            {label:'No-shows (total)', val: clients.reduce((s,c)=>s+c.noShows,0), sub:'all time'},
           ].map(s => (
             <div key={s.label} style={{background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px'}}>
               <div style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:8}}>{s.label}</div>
@@ -91,13 +93,13 @@ export default async function ClientsPage() {
         ) : (
           <div style={{background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16, overflow:'hidden'}}>
             {/* Table header */}
-            <div style={{display:'grid', gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1fr 1fr', gap:0, padding:'12px 24px', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-              {['Client','Contact','Visits','Total Spend','Last Visit','Services'].map(h => (
+            <div style={{display:'grid', gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1fr 1fr 1fr', gap:0, padding:'12px 24px', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+              {['Client','Contact','Visits','Total Spend','No-shows','Last Visit','Services'].map(h => (
                 <div key={h} style={{fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.5px'}}>{h}</div>
               ))}
             </div>
             {clients.map((c, i) => (
-              <div key={c.phone} style={{display:'grid', gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1fr 1fr', gap:0, padding:'16px 24px',
+              <div key={c.phone} style={{display:'grid', gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1fr 1fr 1fr', gap:0, padding:'16px 24px',
                 borderBottom: i < clients.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
                 background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}}>
                 {/* Name + initials */}
@@ -132,6 +134,17 @@ export default async function ClientsPage() {
                   <span style={{fontSize:14, fontWeight:600, color: c.totalSpend > 0 ? GOLD : 'rgba(255,255,255,0.35)'}}>
                     {c.totalSpend > 0 ? `$${c.totalSpend}` : '—'}
                   </span>
+                </div>
+                {/* No-shows */}
+                <div style={{display:'flex', alignItems:'center'}}>
+                  {c.noShows > 0 ? (
+                    <span style={{fontSize:12, fontWeight:700, padding:'3px 8px', borderRadius:100,
+                      background:'rgba(239,68,68,0.1)', color:'#f87171', border:'1px solid rgba(239,68,68,0.25)'}}>
+                      {c.noShows} no-show{c.noShows > 1 ? 's' : ''}
+                    </span>
+                  ) : (
+                    <span style={{fontSize:12, color:'rgba(255,255,255,0.2)'}}>—</span>
+                  )}
                 </div>
                 {/* Last visit */}
                 <div style={{display:'flex', alignItems:'center', fontSize:13, color:'rgba(255,255,255,0.55)'}}>

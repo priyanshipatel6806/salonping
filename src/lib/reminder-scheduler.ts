@@ -22,6 +22,7 @@ export async function processReminders() {
         scheduled_at,
         salon_id,
         reminder_channel,
+        cancel_token,
         salons (
           name,
           plan,
@@ -51,6 +52,8 @@ export async function processReminders() {
 
     const apptDate = new Date(apt.scheduled_at)
     const channel = apt.reminder_channel || 'sms'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    const cancelUrl = apt.cancel_token ? `${appUrl}/cancel/${apt.cancel_token}` : undefined
 
     try {
       if (channel === 'sms') {
@@ -60,13 +63,13 @@ export async function processReminders() {
             apt.client_name, apt.service,
             format(apptDate, 'EEEE MMM d'),
             format(apptDate, 'h:mm a'),
-            salon.name
+            salon.name, cancelUrl
           )
         } else if (reminder.reminder_type === '24h') {
           message = get24hMessage(
             apt.client_name, apt.service,
             format(apptDate, 'h:mm a'),
-            salon.name
+            salon.name, cancelUrl
           )
         } else {
           message = get2hMessage(
@@ -125,13 +128,13 @@ export async function processReminders() {
             apt.client_name, apt.service,
             format(apptDate, 'EEEE MMM d'),
             format(apptDate, 'h:mm a'),
-            salon.name
+            salon.name, cancelUrl
           )
         } else if (reminder.reminder_type === '24h') {
           message = get24hMessage(
             apt.client_name, apt.service,
             format(apptDate, 'h:mm a'),
-            salon.name
+            salon.name, cancelUrl
           )
         } else {
           message = get2hMessage(
@@ -210,5 +213,109 @@ export async function processGoogleReviewRequests() {
       console.error('Review request error:', e.message)
     }
   }
+  return { sent }
+}
+
+export async function processRebookingNudges() {
+  const supabase = createServiceClient()
+  const now = new Date()
+  const sixWeeksAgo = new Date(now.getTime() - 42 * 24 * 60 * 60 * 1000)
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+
+  // Get all salons that have at least one appointment
+  const { data: salons } = await supabase
+    .from('salons')
+    .select('id, name')
+
+  if (!salons?.length) return { sent: 0 }
+
+  let sent = 0
+
+  for (const salon of salons) {
+    try {
+      // Get booking link for this salon
+      const { data: settings } = await supabase
+        .from('booking_settings')
+        .select('slug')
+        .eq('salon_id', salon.id)
+        .single()
+      if (!settings?.slug) continue
+
+      const bookingUrl = `${appUrl}/book/${settings.slug}`
+
+      // Find clients whose last appointment at this salon was 6+ weeks ago
+      const { data: oldAppointments } = await supabase
+        .from('appointments')
+        .select('client_phone, client_name, reminder_channel, scheduled_at')
+        .eq('salon_id', salon.id)
+        .eq('status', 'confirmed')
+        .lte('scheduled_at', sixWeeksAgo.toISOString())
+        .order('scheduled_at', { ascending: false })
+
+      if (!oldAppointments?.length) continue
+
+      // Build map of most recent past appointment per client
+      const lastVisitMap: Record<string, { name: string; channel: string; date: Date }> = {}
+      for (const apt of oldAppointments) {
+        if (!lastVisitMap[apt.client_phone]) {
+          lastVisitMap[apt.client_phone] = {
+            name: apt.client_name,
+            channel: apt.reminder_channel || 'sms',
+            date: new Date(apt.scheduled_at),
+          }
+        }
+      }
+
+      // Exclude clients with upcoming appointments at this salon
+      const { data: upcoming } = await supabase
+        .from('appointments')
+        .select('client_phone')
+        .eq('salon_id', salon.id)
+        .eq('status', 'confirmed')
+        .gte('scheduled_at', now.toISOString())
+
+      const upcomingPhones = new Set((upcoming || []).map(a => a.client_phone))
+
+      // Exclude clients nudged in the last 30 days
+      const { data: recentNudges } = await supabase
+        .from('rebooking_nudges')
+        .select('client_phone')
+        .eq('salon_id', salon.id)
+        .gte('sent_at', thirtyDaysAgo.toISOString())
+
+      const recentlyNudged = new Set((recentNudges || []).map(n => n.client_phone))
+
+      // Send nudges
+      for (const [phone, client] of Object.entries(lastVisitMap)) {
+        if (upcomingPhones.has(phone)) continue
+        if (recentlyNudged.has(phone)) continue
+
+        const message = `Hi ${client.name}! It's been a while since your last visit at ${salon.name} — we miss you! 💛 Ready to book your next appointment? ${bookingUrl}`
+
+        try {
+          if (client.channel === 'whatsapp') {
+            await sendWhatsApp(phone, message)
+          } else {
+            await sendSMS(phone, message)
+          }
+
+          // Record the nudge
+          await supabase.from('rebooking_nudges').insert({
+            salon_id: salon.id,
+            client_phone: phone,
+            sent_at: now.toISOString(),
+          })
+
+          sent++
+        } catch (e: any) {
+          console.error(`Rebooking nudge error for ${phone}:`, e.message)
+        }
+      }
+    } catch (e: any) {
+      console.error(`Rebooking nudge error for salon ${salon.id}:`, e.message)
+    }
+  }
+
   return { sent }
 }

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { processReminders, processGoogleReviewRequests } from '@/lib/reminder-scheduler'
+import { processReminders, processGoogleReviewRequests, processRebookingNudges } from '@/lib/reminder-scheduler'
 
 export async function GET(request: NextRequest) {
   const secret = request.headers.get('x-cron-secret')
-
   if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -11,11 +10,20 @@ export async function GET(request: NextRequest) {
   try {
     const results = await processReminders()
     const reviews = await processGoogleReviewRequests()
+
+    // Run rebooking nudges once a day (on the hourly cron, only run at 10am UTC)
+    let nudges = { sent: 0 }
+    const hour = new Date().getUTCHours()
+    if (hour === 10) {
+      nudges = await processRebookingNudges()
+    }
+
     return NextResponse.json({
       ok: true,
-      sent: results.sent,
+      reminders_sent: results.sent,
       errors: results.errors,
       review_requests_sent: reviews.sent,
+      rebooking_nudges_sent: nudges.sent,
       timestamp: new Date().toISOString(),
     })
   } catch (e: any) {

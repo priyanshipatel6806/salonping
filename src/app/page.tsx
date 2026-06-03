@@ -3,12 +3,12 @@ import Link from 'next/link'
 const GOLD = '#c9a84c'
 
 const features = [
-  { icon: 'ti-device-mobile', title: 'Automatic SMS & WhatsApp Reminders', desc: 'Clients get reminders 48h, 24h, and 2h before their appointment. Zero effort from you.' },
-  { icon: 'ti-calendar-event', title: 'Beautiful Online Booking Page', desc: 'Your own branded link with custom URL. Share on Instagram, Google, WhatsApp — clients book 24/7.' },
-  { icon: 'ti-message-chatbot', title: 'AI Assistant on Every Booking Page', desc: 'An intelligent chat widget answers client questions about services and availability.' },
-  { icon: 'ti-trending-down', title: 'Reduce No-Shows by 27%', desc: 'Automatic reminders at 48h, 24h, and 2h before every appointment keep clients from forgetting.' },
-  { icon: 'ti-star', title: 'Auto Google Review Requests', desc: 'After every completed appointment, clients automatically receive a text asking for a Google review.' },
-  { icon: 'ti-users', title: 'Built-in Client Database', desc: 'See every client, their visit history, total spend, and favourite services — all in one place.' },
+  { icon: '💬', title: 'Automatic SMS & WhatsApp Reminders', desc: 'Clients get reminders 48h, 24h, and 2h before their appointment. Zero effort from you.' },
+  { icon: '📅', title: 'Beautiful Online Booking Page', desc: 'Your own branded link with custom URL. Share on Instagram, Google, WhatsApp — clients book 24/7.' },
+  { icon: '🤖', title: 'AI Assistant on Every Booking Page', desc: 'An intelligent chat widget answers client questions about services and availability.' },
+  { icon: '📉', title: 'Reduce No-Shows by 27%', desc: 'Automatic reminders at 48h, 24h, and 2h before every appointment keep clients from forgetting.' },
+  { icon: '⭐', title: 'Auto Google Review Requests', desc: 'After every completed appointment, clients automatically receive a text asking for a Google review.' },
+  { icon: '👥', title: 'Built-in Client Database', desc: 'See every client, their visit history, total spend, and favourite services — all in one place.' },
 ]
 
 const steps = [
@@ -40,6 +40,7 @@ export default function LandingPage() {
           <div style={{display:'flex', alignItems:'center', gap:24}}>
             <a href="#features" style={{color:'rgba(255,255,255,0.5)', fontSize:14, textDecoration:'none'}}>Features</a>
             <a href="#how-it-works" style={{color:'rgba(255,255,255,0.5)', fontSize:14, textDecoration:'none'}}>How it works</a>
+            <Link href="/pricing" style={{color:'rgba(255,255,255,0.5)', fontSize:14, textDecoration:'none'}}>Pricing</Link>
             <Link href="/login" style={{background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700,
               fontSize:14, padding:'10px 20px', borderRadius:10, textDecoration:'none'}}>
               Get started free
@@ -115,7 +116,7 @@ export default function LandingPage() {
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:20}}>
             {features.map(f => (
               <div key={f.title} style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:20, padding:'28px 28px 24px'}}>
-                <div style={{fontSize:13, fontWeight:700, marginBottom:10, color:GOLD}}>{f.icon.replace('ti-','').replace(/-/g,' ')}</div>
+                <div style={{fontSize:32, marginBottom:12}}>{f.icon}</div>
                 <h3 style={{fontSize:17, fontWeight:700, marginBottom:10, color:'#fff'}}>{f.title}</h3>
                 <p style={{fontSize:14, color:'rgba(255,255,255,0.45)', lineHeight:1.7, margin:0}}>{f.desc}</p>
               </div>

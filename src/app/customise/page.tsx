@@ -21,6 +21,7 @@ export default function CustomisePage() {
   const [form, setForm] = useState({
     headline: '', description: '', primary_color: GOLD,
     google_review_link: '', logo_url: '', cover_photo_url: '', custom_slug: '',
+    stripe_deposit_amount: 0,
   })
 
   useEffect(() => { loadSettings() }, [])
@@ -41,6 +42,7 @@ export default function CustomisePage() {
         logo_url: settings.logo_url || '',
         cover_photo_url: settings.cover_photo_url || '',
         custom_slug: settings.custom_slug || '',
+        stripe_deposit_amount: settings.stripe_deposit_amount || 0,
       })
     }
     setLoading(false)
@@ -220,6 +222,30 @@ export default function CustomisePage() {
               {form.google_review_link && (
                 <div style={{marginTop:12, padding:'10px 14px', background:'rgba(201,168,76,0.08)', borderRadius:8, border:'1px solid rgba(201,168,76,0.2)', fontSize:12, color:GOLD}}>
                   ✦ Review requests are active — clients will be texted 2 hours after their appointment
+                </div>
+              )}
+            </div>
+
+            {/* Stripe Deposit */}
+            <div style={{...cardStyle, border:'1px solid rgba(255,255,255,0.1)'}}>
+              <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 4px'}}>💳 Booking Deposit</h2>
+              <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14}}>
+                Require clients to pay a deposit when booking. This dramatically reduces no-shows.
+                Set to 0 to disable. Requires <code style={{color:GOLD}}>STRIPE_SECRET_KEY</code> in your environment.
+              </p>
+              <div style={{display:'flex', alignItems:'center', gap:10}}>
+                <span style={{fontSize:14, color:'rgba(255,255,255,0.5)', fontWeight:600}}>$</span>
+                <input
+                  type="number" min="0" max="500" step="5"
+                  value={form.stripe_deposit_amount}
+                  onChange={e => setForm({...form, stripe_deposit_amount: Math.max(0, Number(e.target.value))})}
+                  style={{...inputStyle, width:120}}
+                />
+                <span style={{fontSize:13, color:'rgba(255,255,255,0.4)'}}>CAD</span>
+              </div>
+              {form.stripe_deposit_amount > 0 && (
+                <div style={{marginTop:12, padding:'10px 14px', background:'rgba(201,168,76,0.08)', borderRadius:8, border:'1px solid rgba(201,168,76,0.2)', fontSize:12, color:GOLD}}>
+                  ✦ Clients will pay ${form.stripe_deposit_amount} CAD via Stripe before their booking is confirmed
                 </div>
               )}
             </div>
