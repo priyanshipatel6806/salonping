@@ -58,8 +58,8 @@ export default async function DashboardPage() {
             <span style={{fontWeight:800, fontSize:17, color:'#fff', letterSpacing:'-0.3px'}}>SalonPing</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:2}}>
-            {(['/dashboard','Dashboard'],['/appointments','Appointments'],['/services','Services'],['/hours','Hours'],['/customise','Customise'],['/settings','Settings']).map(([href,label]) => (
-              <a key={href} href={href} style={{color:'rgba(255,255,255,0.5)', fontSize:13, fontWeight:500, padding:'6px 12px', borderRadius:8, textDecoration:'none'}}>{label}</a>
+            {([{h:'/dashboard',l:'Dashboard'},{h:'/appointments',l:'Appointments'},{h:'/services',l:'Services'},{h:'/hours',l:'Hours'},{h:'/customise',l:'Customise'},{h:'/settings',l:'Settings'}]).map(n => (
+              <a key={n.h} href={n.h} style={{color:'rgba(255,255,255,0.5)', fontSize:13, fontWeight:500, padding:'6px 12px', borderRadius:8, textDecoration:'none'}}>{n.l}</a>
             ))}
             <a href="/appointments/new" style={{marginLeft:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>+ New</a>
           </div>

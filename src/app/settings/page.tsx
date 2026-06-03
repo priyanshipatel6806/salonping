@@ -61,7 +61,7 @@ export default function SettingsPage() {
             <h2 style={{fontSize:15, fontWeight:700, color:GOLD, margin:'0 0 20px'}}>Salon Details</h2>
             <div style={{display:'flex', flexDirection:'column', gap:16}}>
               {[
-                { key:'name', label:'Salon Name', type:'text', ph:'Priya's Hair Studio' },
+                { key:'name', label:'Salon Name', type:'text', ph:"Priya's Hair Studio" },
                 { key:'phone', label:'Your Phone Number', type:'tel', ph:'+1 226 555 0123', hint:'Used to receive booking notifications via SMS' },
                 { key:'email', label:'Your Email Address', type:'email', ph:'you@example.com', hint:'Used to receive booking notifications via email' },
               ].map(f => (
