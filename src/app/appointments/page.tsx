@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 
 const GOLD = '#c9a84c'
-const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 export default async function AppointmentsPage() {
   const supabase = await createServerSupabaseClient()
@@ -18,17 +18,18 @@ export default async function AppointmentsPage() {
   const past = appointments?.filter(a => new Date(a.scheduled_at) < now || a.status !== 'confirmed') || []
 
   const statusStyle: Record<string, { bg: string; color: string; border: string; label: string }> = {
-    confirmed: { bg: 'rgba(201,168,76,0.12)', color: GOLD, border: 'rgba(201,168,76,0.3)', label: 'upcoming' },
+    upcoming:   { bg: 'rgba(201,168,76,0.12)', color: GOLD, border: 'rgba(201,168,76,0.3)', label: 'upcoming' },
+    attended:   { bg: 'rgba(34,197,94,0.1)', color: '#4ade80', border: 'rgba(34,197,94,0.3)', label: 'attended' },
     cancelled:  { bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)', border: 'rgba(255,255,255,0.1)', label: 'cancelled' },
     no_show:    { bg: 'rgba(239,68,68,0.1)', color: '#f87171', border: 'rgba(239,68,68,0.3)', label: 'no-show' },
-    completed:  { bg: 'rgba(34,197,94,0.1)', color: '#4ade80', border: 'rgba(34,197,94,0.3)', label: 'completed' },
   }
 
   function AptRow({ apt }: { apt: any }) {
     const d = new Date(apt.scheduled_at)
     const isPastConfirmed = d < now && apt.status === 'confirmed'
     const isUpcoming = d >= now && apt.status === 'confirmed'
-    const style = isUpcoming ? statusStyle.confirmed : (statusStyle[apt.status] || statusStyle.cancelled)
+    const styleKey = isUpcoming ? 'upcoming' : isPastConfirmed ? 'attended' : apt.status
+    const style = statusStyle[styleKey] || statusStyle.cancelled
 
     return (
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 24px', borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
