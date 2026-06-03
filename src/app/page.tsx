@@ -4,11 +4,11 @@ const GOLD = '#c9a84c'
 
 const features = [
   { icon: 'ti-device-mobile', title: 'Automatic SMS & WhatsApp Reminders', desc: 'Clients get reminders 48h, 24h, and 2h before their appointment. Zero effort from you.' },
-  { icon: 'ti-calendar-event', title: 'Beautiful Online Booking Page', desc: 'Your own branded booking link. Share it anywhere and let clients book 24/7.' },
+  { icon: 'ti-calendar-event', title: 'Beautiful Online Booking Page', desc: 'Your own branded link with custom URL. Share on Instagram, Google, WhatsApp — clients book 24/7.' },
   { icon: 'ti-message-chatbot', title: 'AI Assistant on Every Booking Page', desc: 'An intelligent chat widget answers client questions about services and availability.' },
-  { icon: 'ti-trending-down', title: 'Reduce No-Shows by 27%', desc: 'Salons using SalonPing see an average 27% drop in no-shows within the first month.' },
-  { icon: 'ti-bolt', title: 'Set Up in 5 Minutes', desc: 'No tech skills needed. Add your services, set your hours, get your booking link. Done.' },
-  { icon: 'ti-bell-ringing', title: 'Instant Owner Notifications', desc: 'Get notified the moment a new booking comes in. Always stay on top of your schedule.' },
+  { icon: 'ti-trending-down', title: 'Reduce No-Shows by 27%', desc: 'Automatic reminders at 48h, 24h, and 2h before every appointment keep clients from forgetting.' },
+  { icon: 'ti-star', title: 'Auto Google Review Requests', desc: 'After every completed appointment, clients automatically receive a text asking for a Google review.' },
+  { icon: 'ti-users', title: 'Built-in Client Database', desc: 'See every client, their visit history, total spend, and favourite services — all in one place.' },
 ]
 
 const steps = [

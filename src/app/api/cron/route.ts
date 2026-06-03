@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { processReminders } from '@/lib/reminder-scheduler'
+import { processReminders, processGoogleReviewRequests } from '@/lib/reminder-scheduler'
 
 export async function GET(request: NextRequest) {
   const secret = request.headers.get('x-cron-secret')
@@ -10,10 +10,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const results = await processReminders()
+    const reviews = await processGoogleReviewRequests()
     return NextResponse.json({
       ok: true,
       sent: results.sent,
       errors: results.errors,
+      review_requests_sent: reviews.sent,
       timestamp: new Date().toISOString(),
     })
   } catch (e: any) {

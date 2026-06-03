@@ -165,3 +165,50 @@ export async function processReminders() {
 
   return results
 }
+export async function processGoogleReviewRequests() {
+  const supabase = createServiceClient()
+  const now = new Date()
+  // Find appointments that ended 2-3 hours ago with a google_review_link set
+  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000)
+  const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000)
+
+  const { data: appointments } = await supabase
+    .from('appointments')
+    .select('id, client_name, client_phone, reminder_channel, salon_id, review_requested')
+    .eq('status', 'confirmed')
+    .eq('review_requested', false)
+    .gte('scheduled_at', threeHoursAgo.toISOString())
+    .lte('scheduled_at', twoHoursAgo.toISOString())
+
+  if (!appointments?.length) return { sent: 0 }
+
+  let sent = 0
+  for (const apt of appointments) {
+    try {
+      const { data: settings } = await supabase
+        .from('booking_settings')
+        .select('google_review_link')
+        .eq('salon_id', apt.salon_id)
+        .single()
+
+      if (!settings?.google_review_link) continue
+
+      const { data: salon } = await supabase
+        .from('salons').select('name').eq('id', apt.salon_id).single()
+
+      const message = `Hi ${apt.client_name}! Thanks for visiting ${salon?.name || 'us'} today. We hope you loved your experience! Would you mind leaving us a quick Google review? It means the world to us: ${settings.google_review_link}`
+
+      if (apt.reminder_channel === 'whatsapp') {
+        await sendWhatsApp(apt.client_phone, message)
+      } else {
+        await sendSMS(apt.client_phone, message)
+      }
+
+      await supabase.from('appointments').update({ review_requested: true }).eq('id', apt.id)
+      sent++
+    } catch (e: any) {
+      console.error('Review request error:', e.message)
+    }
+  }
+  return { sent }
+}

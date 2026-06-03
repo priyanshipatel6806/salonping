@@ -8,6 +8,7 @@ const PROTECTED = [
   '/services',
   '/hours',
   '/settings',
+  '/clients',
   '/customise',
 ]
 
@@ -68,6 +69,7 @@ export const config = {
     '/services/:path*',
     '/hours/:path*',
     '/settings/:path*',
+    '/clients/:path*',
     '/customise/:path*',
     '/login',
   ],
