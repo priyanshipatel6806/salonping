@@ -149,9 +149,9 @@ export default async function DashboardPage() {
 
         <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginTop:24}}>
           {[
-            {href:'/services', icon:'&#9988;', title:'Services', desc:'Manage your service menu and pricing'},
-            {href:'/hours', icon:'&#9200;', title:'Hours', desc:'Set your working hours and availability'},
-            {href:'/customise', icon:'&#9998;', title:'Customise', desc:'Personalise your booking page'},
+            {href:'/services', icon:'✄', title:'Services', desc:'Manage your service menu and pricing'},
+            {href:'/hours', icon:'⏰', title:'Hours', desc:'Set your working hours and availability'},
+            {href:'/customise', icon:'✎', title:'Customise', desc:'Personalise your booking page'},
           ].map(card => (
             <a key={card.href} href={card.href} style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'20px', textDecoration:'none', transition:'all .15s', display:'block'}}>
               <div style={{fontSize:24, marginBottom:10}}>{card.icon}</div>
