@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 
 const GOLD = '#c9a84c'
-const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
