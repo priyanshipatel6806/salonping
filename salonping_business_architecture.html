@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #0a0a0a; color: #fff; padding: 24px; }
+h2 { color: #c9a84c; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+.section { margin-bottom: 28px; }
+.gold { color: #c9a84c; }
+.red { color: #f87171; }
+.green { color: #4ade80; }
+.gray { color: rgba(255,255,255,0.4); }
+
+/* TABS */
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab { padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5); cursor: pointer; font-size: 13px; font-weight: 600; }
+.tab.active { background: rgba(201,168,76,0.12); border-color: #c9a84c; color: #c9a84c; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* PLANS */
+.plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.plan { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 18px; }
+.plan.pro { border-color: #c9a84c; background: rgba(201,168,76,0.05); }
+.plan-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+.plan.pro .plan-name { color: #c9a84c; }
+.plan-price { font-size: 32px; font-weight: 900; letter-spacing: -1px; margin-bottom: 2px; }
+.plan-sub { font-size: 11px; color: rgba(255,255,255,0.35); margin-bottom: 14px; }
+.plan-feature { font-size: 12px; color: rgba(255,255,255,0.6); padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; gap: 6px; align-items: flex-start; }
+.plan-feature .check { color: #c9a84c; flex-shrink: 0; }
+.plan-feature .cross { color: rgba(255,255,255,0.2); flex-shrink: 0; }
+
+/* COST TABLE */
+.cost-section { margin-bottom: 20px; }
+.cost-row { display: grid; grid-template-columns: 180px 1fr 1fr 1fr; gap: 8px; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; align-items: center; }
+.cost-row.header { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.cost-row:hover { background: rgba(255,255,255,0.02); }
+.tool-name { font-weight: 600; color: #fff; }
+.tag { font-size: 10px; padding: 2px 6px; border-radius: 100px; display: inline-block; }
+.tag.free { background: rgba(34,197,94,0.12); color: #4ade80; }
+.tag.paid { background: rgba(239,68,68,0.12); color: #f87171; }
+.tag.var { background: rgba(201,168,76,0.12); color: #c9a84c; }
+
+/* PROFIT TABLE */
+.profit-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.profit-card.green-card { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.04); }
+.profit-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.profit-row.total { font-weight: 800; font-size: 15px; border-bottom: none; padding-top: 10px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.1); }
+
+/* FLOW */
+.flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin-bottom: 16px; }
+.flow-box { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 16px; text-align: center; min-width: 120px; }
+.flow-box.gold-box { background: rgba(201,168,76,0.08); border-color: rgba(201,168,76,0.3); }
+.flow-box.blue-box { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3); }
+.flow-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); margin-bottom: 3px; text-transform: uppercase; }
+.flow-name { font-size: 13px; font-weight: 700; color: #fff; }
+.flow-amount { font-size: 12px; color: #c9a84c; margin-top: 2px; }
+.arrow { font-size: 18px; color: rgba(255,255,255,0.2); padding: 0 8px; }
+
+/* ARCH */
+.arch { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.arch-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; }
+.arch-box h3 { font-size: 12px; font-weight: 700; color: #c9a84c; margin-bottom: 8px; }
+.arch-item { font-size: 12px; color: rgba(255,255,255,0.6); padding: 3px 0; display: flex; justify-content: space-between; }
+.arch-item span { color: rgba(255,255,255,0.35); }
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('plans')">📦 Plans</div>
+  <div class="tab" onclick="show('costs')">💰 Your Costs</div>
+  <div class="tab" onclick="show('profit')">📈 Profit at Scale</div>
+  <div class="tab" onclick="show('flow')">💳 Payment Flow</div>
+  <div class="tab" onclick="show('arch')">🏗️ Architecture</div>
+</div>
+
+<!-- PLANS -->
+<div class="panel active" id="plans">
+  <div class="plans">
+    <div class="plan">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0</div>
+      <div class="plan-sub">Forever free · No card needed</div>
+      <div class="plan-feature"><span class="check">✓</span>1 booking page</div>
+      <div class="plan-feature"><span class="check">✓</span>Unlimited bookings</div>
+      <div class="plan-feature"><span class="check">✓</span>20 SMS/WhatsApp reminders/mo</div>
+      <div class="plan-feature"><span class="check">✓</span>AI chat widget on booking page</div>
+      <div class="plan-feature"><span class="check">✓</span>Client database</div>
+      <div class="plan-feature"><span class="check">✓</span>Google review requests</div>
+      <div class="plan-feature"><span class="check">✓</span>Basic dashboard</div>
+      <div class="plan-feature"><span class="cross">✗</span>Stripe deposit collection</div>
+      <div class="plan-feature"><span class="cross">✗</span>Unlimited reminders</div>
+      <div class="plan-feature"><span class="cross">✗</span>Email reminders</div>
+      <div class="plan-feature"><span class="cross">✗</span>Rebooking nudges</div>
+      <div class="plan-feature"><span class="cross">✗</span>No-show tracking</div>
+      <div class="plan-feature"><span class="cross">✗</span>Cancel links in SMS</div>
+      <div class="plan-feature"><span class="cross">✗</span>AI voice assistant</div>
+      <div class="plan-feature"><span class="cross">✗</span>Staff profiles</div>
+    </div>
+    <div class="plan pro">
+      <div class="plan-name">Pro ⭐ Most Popular</div>
+      <div class="plan-price gold">$49</div>
+      <div class="plan-sub">/month · Cancel anytime</div>
+      <div class="plan-feature"><span class="check">✓</span>Everything in Free</div>
+      <div class="plan-feature"><span class="check">✓</span>Unlimited SMS + WhatsApp + Email</div>
+      <div class="plan-feature"><span class="check">✓</span>Stripe deposit collection</div>
+      <div class="plan-feature"><span class="check">✓</span>Client cancel links in reminders</div>
+      <div class="plan-feature"><span class="check">✓</span>Rebooking nudges (we miss you)</div>
+      <div class="plan-feature"><span class="check">✓</span>No-show tracking per client</div>
+      <div class="plan-feature"><span class="check">✓</span>Analytics dashboard</div>
+      <div class="plan-feature"><span class="check">✓</span>Priority support</div>
+      <div class="plan-feature"><span class="cross">✗</span>AI voice assistant</div>
+      <div class="plan-feature"><span class="cross">✗</span>Staff profiles</div>
+      <div class="plan-feature"><span class="cross">✗</span>Multiple booking pages</div>
+      <div class="plan-feature"><span class="cross">✗</span>Remove SalonPing branding</div>
+    </div>
+    <div class="plan">
+      <div class="plan-name">Business</div>
+      <div class="plan-price">$99</div>
+      <div class="plan-sub">/month · For growing salons</div>
+      <div class="plan-feature"><span class="check">✓</span>Everything in Pro</div>
+      <div class="plan-feature"><span class="check">✓</span>AI voice assistant (phone booking)</div>
+      <div class="plan-feature"><span class="check">✓</span>Up to 5 staff profiles</div>
+      <div class="plan-feature"><span class="check">✓</span>3 booking pages (multi-location)</div>
+      <div class="plan-feature"><span class="check">✓</span>Remove SalonPing branding</div>
+      <div class="plan-feature"><span class="check">✓</span>Custom domain support</div>
+      <div class="plan-feature"><span class="check">✓</span>Waitlist for full slots</div>
+      <div class="plan-feature"><span class="check">✓</span>Loyalty points system</div>
+      <div class="plan-feature"><span class="check">✓</span>WhatsApp booking bot</div>
+      <div class="plan-feature"><span class="check">✓</span>Dedicated support</div>
+    </div>
+  </div>
+  <p style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:12px;">⚠️ Raise Pro from $29 → $49 to cover Twilio SMS costs at scale without going into loss.</p>
+</div>
+
+<!-- COSTS -->
+<div class="panel" id="costs">
+  <div class="cost-row header">
+    <div>Tool</div>
+    <div>What it does</div>
+    <div>Your cost (100 salons)</div>
+    <div>Your cost (1000 salons)</div>
+  </div>
+  <div class="cost-row">
+    <div class="tool-name">Vercel <span class="tag paid">$20/mo</span></div>
+    <div class="gray">Hosts your Next.js app, serverless API routes, cron jobs</div>
+    <div>$20/mo flat</div>
+    <div>$20/mo flat</div>
+  </div>
+  <div class="cost-row">
+    <div class="tool-name">Supabase <span class="tag paid">$25/mo</span></div>
+    <div class="gray">Database (appointments, clients, salons), auth, file storage for photos</div>
+    <div>$25/mo (Pro)</div>
+    <div>$25–$599/mo</div>
+  </div>
+  <div class="cost-row">
+    <div class="tool-name">Twilio SMS <span class="tag var">$0.01/msg</span></div>
+    <div class="gray">SMS + WhatsApp reminders, cancel links, rebooking nudges, voice calls</div>
+    <div>~$80–$200/mo</div>
+    <div>~$800–$2,000/mo</div>
+  </div>
+  <div class="cost-row">
+    <div class="tool-name">Groq AI <span class="tag free">Free→$0.05/M</span></div>
+    <div class="gray">AI chat widget on booking pages (LLaMA 3.1 8B instant)</div>
+    <div>Free (under limit)</div>
+    <div>~$20–$50/mo</div>
+  </div>
+  <div class="cost-row">
+    <div class="tool-name">Vapi.ai <span class="tag var">$0.05/min</span></div>
+    <div class="gray">AI voice assistant — clients call salon number, bot books appointment</div>
+    <div>~$10/mo (Business plan only)</div>
+    <div>~$100–$500/mo</div>
+  </div>
+  <div class="cost-row">
+    <div class="tool-name">Resend <span class="tag free">Free→$20/mo</span></div>
+    <div class="gray">Email reminders, booking confirmations</div>
+    <div>Free (under 3K/mo)</div>
+    <div>$20/mo</div>
+  </div>
+  <div class="cost-row">
+    <div class="tool-name">Stripe <span class="tag var">2.9%+$0.30</span></div>
+    <div class="gray">Subscription billing (salon pays you) + deposit processing (client pays salon)</div>
+    <div>~$1.14/sub deducted</div>
+    <div>~$1.14/sub deducted</div>
+  </div>
+  <div style="margin-top:14px;padding:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;font-size:12px;">
+    ⚠️ <strong style="color:#f87171">Biggest risk: Twilio SMS.</strong> Each pro salon sends ~400 reminders/mo = $4/mo in SMS. At $49/mo Pro, you keep $45 after SMS. That's your margin. Don't offer "unlimited" to free users — the 20/mo cap protects you.
+  </div>
+</div>
+
+<!-- PROFIT -->
+<div class="panel" id="profit">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div>
+      <h2>100 Salon Owners</h2>
+      <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:12px;">Assume: 70 free, 25 pro ($49), 5 business ($99)</p>
+      <div class="profit-card green-card">
+        <div class="profit-row"><span>Pro revenue (25 × $49)</span><span class="green">$1,225/mo</span></div>
+        <div class="profit-row"><span>Business revenue (5 × $99)</span><span class="green">$495/mo</span></div>
+        <div class="profit-row total"><span>Total Revenue</span><span class="green">$1,720/mo</span></div>
+      </div>
+      <div class="profit-card" style="margin-top:10px;">
+        <div class="profit-row"><span>Vercel</span><span class="red">-$20</span></div>
+        <div class="profit-row"><span>Supabase</span><span class="red">-$25</span></div>
+        <div class="profit-row"><span>Twilio SMS</span><span class="red">-$180</span></div>
+        <div class="profit-row"><span>Groq + Resend</span><span class="red">-$0</span></div>
+        <div class="profit-row"><span>Vapi (voice)</span><span class="red">-$25</span></div>
+        <div class="profit-row"><span>Stripe fees</span><span class="red">-$87</span></div>
+        <div class="profit-row total"><span>Total Costs</span><span class="red">-$337/mo</span></div>
+      </div>
+      <div style="margin-top:10px;padding:14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:10px;text-align:center;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);">Net Profit</div>
+        <div style="font-size:28px;font-weight:900;color:#4ade80;">$1,383/mo</div>
+      </div>
+    </div>
+    <div>
+      <h2>1,000 Salon Owners</h2>
+      <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:12px;">Assume: 650 free, 300 pro ($49), 50 business ($99)</p>
+      <div class="profit-card green-card">
+        <div class="profit-row"><span>Pro revenue (300 × $49)</span><span class="green">$14,700/mo</span></div>
+        <div class="profit-row"><span>Business revenue (50 × $99)</span><span class="green">$4,950/mo</span></div>
+        <div class="profit-row total"><span>Total Revenue</span><span class="green">$19,650/mo</span></div>
+      </div>
+      <div class="profit-card" style="margin-top:10px;">
+        <div class="profit-row"><span>Vercel Pro</span><span class="red">-$20</span></div>
+        <div class="profit-row"><span>Supabase Pro</span><span class="red">-$25</span></div>
+        <div class="profit-row"><span>Twilio SMS</span><span class="red">-$1,800</span></div>
+        <div class="profit-row"><span>Groq AI</span><span class="red">-$50</span></div>
+        <div class="profit-row"><span>Vapi (voice)</span><span class="red">-$250</span></div>
+        <div class="profit-row"><span>Resend email</span><span class="red">-$20</span></div>
+        <div class="profit-row"><span>Stripe fees</span><span class="red">-$865</span></div>
+        <div class="profit-row total"><span>Total Costs</span><span class="red">-$3,030/mo</span></div>
+      </div>
+      <div style="margin-top:10px;padding:14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:10px;text-align:center;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);">Net Profit</div>
+        <div style="font-size:28px;font-weight:900;color:#4ade80;">$16,620/mo</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;padding:12px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:10px;font-size:12px;color:rgba(255,255,255,0.55);">
+    💡 <strong style="color:#c9a84c">Salon client count (100–10,000):</strong> This affects your Supabase DB size, not costs much. 1,000 salons × 1,000 clients avg × 10 appointments = 10M rows ≈ 5–8GB. Fine on Pro ($25/mo). At 10,000 clients/salon you'd need Supabase Team ($599/mo) — still profitable at 1,000 salon scale.
+  </div>
+</div>
+
+<!-- PAYMENT FLOW -->
+<div class="panel" id="flow">
+  <h2>How money flows</h2>
+  
+  <div style="margin-bottom:20px;">
+    <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:12px;">Flow 1 — Salon owner pays SalonPing (monthly subscription)</p>
+    <div class="flow">
+      <div class="flow-box">
+        <div class="flow-label">Salon Owner</div>
+        <div class="flow-name">💇 A1 Salon</div>
+        <div class="flow-amount">pays $49/mo</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-box blue-box">
+        <div class="flow-label">Stripe Billing</div>
+        <div class="flow-name">💳 Stripe</div>
+        <div class="flow-amount">takes 2.9%+$0.30</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-box gold-box">
+        <div class="flow-label">You (SalonPing)</div>
+        <div class="flow-name">✄ SalonPing</div>
+        <div class="flow-amount">receive ~$47.28</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:20px;">
+    <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:12px;">Flow 2 — Client pays deposit to salon owner (via Stripe Connect)</p>
+    <div class="flow">
+      <div class="flow-box">
+        <div class="flow-label">Client</div>
+        <div class="flow-name">👤 Jane</div>
+        <div class="flow-amount">pays $10 deposit</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-box blue-box">
+        <div class="flow-label">Stripe Connect</div>
+        <div class="flow-name">💳 Stripe</div>
+        <div class="flow-amount">2.9%+$0.30 fee</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-box gold-box">
+        <div class="flow-label">Salon Owner</div>
+        <div class="flow-name">💇 A1 Salon</div>
+        <div class="flow-amount">receives ~$9.41</div>
+      </div>
+    </div>
+    <div style="margin-top:8px;padding:10px 14px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.5);">
+      ⚠️ <strong style="color:#c9a84c">Right now:</strong> Deposits go to YOUR Stripe, not the salon's. You need <strong style="color:#c9a84c">Stripe Connect</strong> so each salon connects their own Stripe account and deposits flow directly to them. You can optionally take a 1–2% platform fee per transaction.
+    </div>
+  </div>
+
+  <div>
+    <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:12px;">Flow 3 — Client pays remaining balance at salon (in person)</p>
+    <div class="flow">
+      <div class="flow-box">
+        <div class="flow-label">Client</div>
+        <div class="flow-name">👤 Jane</div>
+        <div class="flow-amount">pays $90 at salon</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-box">
+        <div class="flow-label">Direct / Cash / POS</div>
+        <div class="flow-name">🏪 In Person</div>
+        <div class="flow-amount">no Stripe needed</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="flow-box gold-box">
+        <div class="flow-label">Salon Owner</div>
+        <div class="flow-name">💇 A1 Salon</div>
+        <div class="flow-amount">keeps $90</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ARCHITECTURE -->
+<div class="panel" id="arch">
+  <div class="arch">
+    <div class="arch-box">
+      <h3>🖥️ Frontend & Hosting</h3>
+      <div class="arch-item">Next.js 16 (App Router) <span>your code</span></div>
+      <div class="arch-item">Vercel <span>$20/mo</span></div>
+      <div class="arch-item">Tailwind CSS <span>free</span></div>
+      <div class="arch-item">Lucide Icons <span>free</span></div>
+    </div>
+    <div class="arch-box">
+      <h3>🗄️ Database & Auth</h3>
+      <div class="arch-item">Supabase PostgreSQL <span>$25/mo</span></div>
+      <div class="arch-item">Supabase Auth (magic link) <span>included</span></div>
+      <div class="arch-item">Supabase Storage (photos) <span>included</span></div>
+      <div class="arch-item">Row Level Security <span>enabled</span></div>
+    </div>
+    <div class="arch-box">
+      <h3>📱 SMS & WhatsApp</h3>
+      <div class="arch-item">Twilio SMS <span>$0.01/msg</span></div>
+      <div class="arch-item">Twilio WhatsApp <span>$0.005/msg</span></div>
+      <div class="arch-item">Twilio Voice (calls) <span>$0.013/min</span></div>
+      <div class="arch-item">Phone number <span>$1/mo</span></div>
+    </div>
+    <div class="arch-box">
+      <h3>🤖 AI (Chat + Voice)</h3>
+      <div class="arch-item">Groq — LLaMA 3.1 8B <span>free tier</span></div>
+      <div class="arch-item">Chat widget on booking page <span>✓ built</span></div>
+      <div class="arch-item">Vapi.ai — voice bot <span>$0.05/min</span></div>
+      <div class="arch-item">Client calls → bot books <span>todo</span></div>
+    </div>
+    <div class="arch-box">
+      <h3>💳 Payments</h3>
+      <div class="arch-item">Stripe — subscriptions <span>2.9%+$0.30</span></div>
+      <div class="arch-item">Stripe Checkout — deposits <span>built ✓</span></div>
+      <div class="arch-item">Stripe Connect — needed <span>⚠️ todo</span></div>
+      <div class="arch-item">Stripe Webhooks <span>built ✓</span></div>
+    </div>
+    <div class="arch-box">
+      <h3>📧 Email & Cron</h3>
+      <div class="arch-item">Resend — email reminders <span>free→$20</span></div>
+      <div class="arch-item">Vercel Cron — hourly <span>included</span></div>
+      <div class="arch-item">Google Review requests <span>built ✓</span></div>
+      <div class="arch-item">Rebooking nudges <span>built ✓</span></div>
+    </div>
+  </div>
+  <div style="margin-top:14px;padding:12px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:10px;font-size:12px;color:rgba(255,255,255,0.5);">
+    🏗️ <strong style="color:#c9a84c">Two things still to build:</strong> (1) <strong style="color:#c9a84c">Stripe Connect</strong> — so salon owners connect their own Stripe and deposits go directly to them. (2) <strong style="color:#c9a84c">Vapi.ai voice bot</strong> — client calls the salon number, AI answers and books the appointment.
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
