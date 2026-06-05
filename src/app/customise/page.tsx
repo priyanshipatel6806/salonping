@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 const COLORS = ['#c9a84c','#2563eb','#7c3aed','#db2777','#dc2626','#ea580c','#16a34a','#0891b2','#374151','#000000']
 
@@ -240,41 +240,4 @@ export default function CustomisePage() {
               <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 4px'}}>💳 Booking Deposit</h2>
               <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14}}>
                 Require clients to pay a deposit when booking. This dramatically reduces no-shows.
-                Set to 0 to disable. Requires <code style={{color:GOLD}}>STRIPE_SECRET_KEY</code> in your environment.
-              </p>
-              <div style={{display:'flex', alignItems:'center', gap:10}}>
-                <span style={{fontSize:14, color:'rgba(255,255,255,0.5)', fontWeight:600}}>$</span>
-                <input
-                  type="number" min="0" max="500" step="5"
-                  value={form.stripe_deposit_amount}
-                  onChange={e => setForm({...form, stripe_deposit_amount: Math.max(0, Number(e.target.value))})}
-                  style={{...inputStyle, width:120}}
-                />
-                <span style={{fontSize:13, color:'rgba(255,255,255,0.4)'}}>CAD</span>
-              </div>
-              {form.stripe_deposit_amount > 0 && (
-                <div style={{marginTop:12, padding:'10px 14px', background:'rgba(201,168,76,0.08)', borderRadius:8, border:'1px solid rgba(201,168,76,0.2)', fontSize:12, color:GOLD}}>
-                  ✦ Clients will pay ${form.stripe_deposit_amount} CAD via Stripe before their booking is confirmed
-                </div>
-              )}
-            </div>
-
-            {/* Live URL */}
-            {slug && (
-              <div style={{background:'rgba(201,168,76,0.06)', border:'1px solid rgba(201,168,76,0.25)', borderRadius:14, padding:20, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16}}>
-                <div>
-                  <div style={{fontSize:14, fontWeight:700, color:GOLD, marginBottom:4}}>✦ Your Live Booking Page</div>
-                  <code style={{fontSize:12, color:'rgba(255,255,255,0.7)', fontFamily:'monospace'}}>{appUrl}/book/{slug}</code>
-                </div>
-                <a href={`${appUrl}/book/${slug}`} target="_blank"
-                  style={{background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'9px 18px', borderRadius:10, textDecoration:'none', whiteSpace:'nowrap'}}>
-                  Open →
-                </a>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  )
-}
+                Set to 0 to disable. Requires <code style={{color:GOLD}}>STRIPE_SEC

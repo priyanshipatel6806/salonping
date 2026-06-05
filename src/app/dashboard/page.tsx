@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient()

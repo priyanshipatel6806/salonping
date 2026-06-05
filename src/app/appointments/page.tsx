@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 
 const GOLD = '#c9a84c'
-const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 export default async function AppointmentsPage() {
   const supabase = await createServerSupabaseClient()
@@ -105,34 +105,4 @@ export default async function AppointmentsPage() {
 
         {upcoming.length > 0 && (
           <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, overflow:'hidden', marginBottom:20}}>
-            <div style={{padding:'16px 24px', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-              <h2 style={{fontSize:14, fontWeight:700, color:GOLD, margin:0}}>Upcoming</h2>
-            </div>
-            {upcoming.map((apt: any) => <AptRow key={apt.id} apt={apt} />)}
-          </div>
-        )}
-
-        {past.length > 0 && (
-          <div style={{background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, overflow:'hidden'}}>
-            <div style={{padding:'16px 24px', borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
-              <h2 style={{fontSize:14, fontWeight:700, color:'rgba(255,255,255,0.4)', margin:0}}>Past</h2>
-            </div>
-            {past.map((apt: any) => <AptRow key={apt.id} apt={apt} />)}
-          </div>
-        )}
-
-        {!appointments?.length && (
-          <div style={{textAlign:'center', padding:80, background:'rgba(255,255,255,0.02)', borderRadius:16, border:'1px dashed rgba(255,255,255,0.1)'}}>
-            <div style={{fontSize:40, marginBottom:16}}>&#128197;</div>
-            <h3 style={{color:'#fff', margin:'0 0 8px', fontWeight:700}}>No appointments yet</h3>
-            <p style={{color:'rgba(255,255,255,0.4)', fontSize:13, marginBottom:20}}>Add your first appointment or share your booking link</p>
-            <a href="/appointments/new"
-              style={{background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'10px 22px', borderRadius:10, textDecoration:'none', display:'inline-block'}}>
-              + Add Appointment
-            </a>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+            <div style={{padding:'16px 24px', borderBotto

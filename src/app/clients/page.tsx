@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 export default async function ClientsPage() {
   const supabase = await createServerSupabaseClient()
@@ -148,23 +148,4 @@ export default async function ClientsPage() {
                 </div>
                 {/* Last visit */}
                 <div style={{display:'flex', alignItems:'center', fontSize:13, color:'rgba(255,255,255,0.55)'}}>
-                  {new Date(c.lastVisit).toLocaleDateString('en-CA', {month:'short', day:'numeric', year:'numeric'})}
-                </div>
-                {/* Services */}
-                <div style={{display:'flex', alignItems:'center', gap:4, flexWrap:'wrap'}}>
-                  {c.services.slice(0,2).map(s => (
-                    <span key={s} style={{fontSize:10, padding:'2px 7px', borderRadius:100,
-                      background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.55)'}}>
-                      {s.length > 12 ? s.slice(0,12)+'…' : s}
-                    </span>
-                  ))}
-                  {c.services.length > 2 && <span style={{fontSize:10, color:'rgba(255,255,255,0.35)'}}>+{c.services.length-2}</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+                  {new Date(c.lastVisit).toLocaleDateString('en-CA', 
