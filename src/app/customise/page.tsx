@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase'
 
 const GOLD = '#c9a84c'
 const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
-
 const COLORS = ['#c9a84c','#2563eb','#7c3aed','#db2777','#dc2626','#ea580c','#16a34a','#0891b2','#374151','#000000']
 
 export default function CustomisePage() {
@@ -36,6 +35,7 @@ export default function CustomisePage() {
     const { data: settings } = await supabase.from('booking_settings').select('*').eq('salon_id', salon?.id).single()
     if (settings) {
       setSlug(settings.slug)
+      setStripeConnected(settings.stripe_connected || false)
       setForm({
         headline: settings.headline || '',
         description: settings.description || '',
@@ -47,30 +47,17 @@ export default function CustomisePage() {
         stripe_deposit_amount: settings.stripe_deposit_amount || 0,
       })
     }
-    // Check Stripe Connect status
-    const connectRes = await fetch('/api/stripe/connect')
-    const connectData = await connectRes.json()
-    setStripeConnected(connectData.connected)
-
-    // Handle return from Stripe Connect
     const params = new URLSearchParams(window.location.search)
-    if (params.get('connect') === 'success') {
+    if (params.get('stripe_connected') === 'true') {
       setStripeConnected(true)
       window.history.replaceState({}, '', '/customise')
     }
-
     setLoading(false)
   }
 
   async function handleStripeConnect() {
     setStripeConnecting(true)
-    try {
-      const res = await fetch('/api/stripe/connect', { method: 'POST' })
-      const data = await res.json()
-      if (data.url) window.location.href = data.url
-      else alert('Error: ' + data.error)
-    } catch { alert('Something went wrong') }
-    setStripeConnecting(false)
+    window.location.href = '/api/stripe/connect'
   }
 
   async function handleSave() {
@@ -83,7 +70,6 @@ export default function CustomisePage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user?.id).single()
-    // Build update payload explicitly
     const updateData: any = {
       headline: form.headline,
       description: form.description,
@@ -180,7 +166,7 @@ export default function CustomisePage() {
             {/* Salon Photos */}
             <div style={cardStyle}>
               <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 4px'}}>Salon Photos</h2>
-              <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:16}}>Logo and cover photo shown on your booking page. Requires a <code style={{color:GOLD}}>salon-photos</code> public bucket in Supabase Storage.</p>
+              <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:16}}>Logo and cover photo shown on your booking page.</p>
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
                 {[
                   {type:'logo' as const, label:'Salon Logo', ref:logoRef, uploading:uploadingLogo, url:form.logo_url},
@@ -213,8 +199,7 @@ export default function CustomisePage() {
               <div style={{display:'flex', flexWrap:'wrap', gap:10, marginBottom:14}}>
                 {COLORS.map(color => (
                   <button key={color} onClick={() => setForm({...form, primary_color: color})}
-                    style={{width:36, height:36, borderRadius:8, background:color, border: form.primary_color === color ? `3px solid ${GOLD}` : '3px solid transparent', cursor:'pointer', outline:'none'}}>
-                  </button>
+                    style={{width:36, height:36, borderRadius:8, background:color, border: form.primary_color === color ? `3px solid ${GOLD}` : '3px solid transparent', cursor:'pointer', outline:'none'}} />
                 ))}
               </div>
               <div style={{display:'flex', alignItems:'center', gap:12}}>
@@ -247,12 +232,10 @@ export default function CustomisePage() {
             {/* Google review */}
             <div style={{...cardStyle, border:'1px solid rgba(255,255,255,0.1)'}}>
               <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 4px'}}>⭐ Auto Google Review Requests</h2>
-              <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14}}>After each appointment, SalonPing automatically texts your client asking them to leave a Google review. Paste your Google review link below to activate this.</p>
+              <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14}}>After each appointment, SalonPing automatically texts your client asking them to leave a Google review.</p>
               <input value={form.google_review_link} onChange={e => setForm({...form, google_review_link: e.target.value})}
                 placeholder="https://g.page/r/your-salon/review" style={inputStyle} type="url" />
-              <p style={{fontSize:11, color:'rgba(255,255,255,0.3)', marginTop:6}}>
-                Find your link: Google Maps → your salon → Get more reviews → copy the link
-              </p>
+              <p style={{fontSize:11, color:'rgba(255,255,255,0.3)', marginTop:6}}>Find your link: Google Maps → your salon → Get more reviews → copy the link</p>
               {form.google_review_link && (
                 <div style={{marginTop:12, padding:'10px 14px', background:'rgba(201,168,76,0.08)', borderRadius:8, border:'1px solid rgba(201,168,76,0.2)', fontSize:12, color:GOLD}}>
                   ✦ Review requests are active — clients will be texted 2 hours after their appointment
@@ -281,8 +264,8 @@ export default function CustomisePage() {
                     <div style={{fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:2}}>Deposits are currently held in SalonPing&apos;s Stripe account until you connect yours.</div>
                   </div>
                   <button onClick={handleStripeConnect} disabled={stripeConnecting}
-                    style={{padding:'10px 20px', background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, borderRadius:10, border:'none', cursor:'pointer', opacity: stripeConnecting ? 0.7 : 1}}>
-                    {stripeConnecting ? 'Connecting...' : '🔗 Connect Stripe Account'}
+                    style={{padding:'10px 20px', background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, borderRadius:10, border:'none', cursor:'pointer', opacity: stripeConnecting ? 0.7 : 1}}>
+                    {stripeConnecting ? 'Redirecting to Stripe...' : '🔗 Connect Stripe Account'}
                   </button>
                   <p style={{fontSize:11, color:'rgba(255,255,255,0.3)', marginTop:8}}>Free to set up · Takes 2 minutes · Stripe handles all verification</p>
                 </div>
@@ -293,5 +276,41 @@ export default function CustomisePage() {
             <div style={{...cardStyle, border:'1px solid rgba(255,255,255,0.1)'}}>
               <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 4px'}}>💳 Booking Deposit</h2>
               <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14}}>
-                Require clients to pay a deposit when booking. This dramatically reduces no-shows.
-                Set to 0 to disable. Requires <code style={{color:GOLD}}>STRIPE_SEC
+                Require clients to pay a deposit when booking. Set to 0 to disable. Connect Stripe above first.
+              </p>
+              <div style={{display:'flex', alignItems:'center', gap:10}}>
+                <span style={{fontSize:14, color:'rgba(255,255,255,0.5)', fontWeight:600}}>$</span>
+                <input type="number" min="0" max="500" step="5"
+                  value={form.stripe_deposit_amount}
+                  onChange={e => setForm({...form, stripe_deposit_amount: Math.max(0, Number(e.target.value))})}
+                  style={{...inputStyle, width:120}} />
+                <span style={{fontSize:13, color:'rgba(255,255,255,0.4)'}}>CAD</span>
+              </div>
+              {form.stripe_deposit_amount > 0 && (
+                <div style={{marginTop:12, padding:'10px 14px', background:'rgba(201,168,76,0.08)', borderRadius:8, border:'1px solid rgba(201,168,76,0.2)', fontSize:12, color:GOLD}}>
+                  ✦ Clients will pay ${form.stripe_deposit_amount} CAD via Stripe before their booking is confirmed
+                </div>
+              )}
+            </div>
+
+            {/* Live URL */}
+            {slug && (
+              <div style={{...cardStyle, border:'1px solid rgba(201,168,76,0.2)', background:'rgba(201,168,76,0.03)'}}>
+                <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 8px'}}>🔗 Your Booking Link</h2>
+                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                  <code style={{flex:1, fontSize:13, color:GOLD, background:'rgba(255,255,255,0.04)', padding:'10px 14px', borderRadius:8, wordBreak:'break-all'}}>
+                    {appUrl}/book/{slug}
+                  </code>
+                  <a href={`${appUrl}/book/${slug}`} target="_blank"
+                    style={{padding:'10px 16px', background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, borderRadius:10, textDecoration:'none', whiteSpace:'nowrap'}}>
+                    Preview →
+                  </a>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
