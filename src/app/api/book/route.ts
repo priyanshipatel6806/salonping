@@ -7,26 +7,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { salon_id, client_name, client_phone, client_email, service, scheduled_at, reminder_channel } = body
 
-    // Validate required fields
     if (!salon_id || !client_name || !client_phone || !service || !scheduled_at) {
       return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Validate phone number format
     const cleanPhone = client_phone.replace(/[\s\-\(\)]/g, '')
     const phoneRegex = /^\+?[1-9]\d{7,14}$/
     if (!phoneRegex.test(cleanPhone)) {
       return NextResponse.json({ ok: false, error: 'Invalid phone number format. Please include country code e.g. +12265033362' }, { status: 400 })
     }
 
-    // Validate email if provided
     if (client_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(client_email)) {
       return NextResponse.json({ ok: false, error: 'Invalid email address' }, { status: 400 })
     }
 
     const supabase = createServiceClient()
 
-    // Check for double booking — same salon, same time slot
     const { data: existing } = await supabase
       .from('appointments')
       .select('id')

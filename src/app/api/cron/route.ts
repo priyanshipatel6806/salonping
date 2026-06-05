@@ -6,18 +6,14 @@ export async function GET(request: NextRequest) {
   if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
   try {
     const results = await processReminders()
     const reviews = await processGoogleReviewRequests()
-
-    // Run rebooking nudges once a day (on the hourly cron, only run at 10am UTC)
     let nudges = { sent: 0 }
     const hour = new Date().getUTCHours()
     if (hour === 10) {
       nudges = await processRebookingNudges()
     }
-
     return NextResponse.json({
       ok: true,
       reminders_sent: results.sent,

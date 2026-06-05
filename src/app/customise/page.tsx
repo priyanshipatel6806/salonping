@@ -16,6 +16,8 @@ export default function CustomisePage() {
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
   const [slugError, setSlugError] = useState('')
+  const [stripeConnected, setStripeConnected] = useState(false)
+  const [stripeConnecting, setStripeConnecting] = useState(false)
   const logoRef = useRef<HTMLInputElement>(null)
   const coverRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
@@ -45,7 +47,30 @@ export default function CustomisePage() {
         stripe_deposit_amount: settings.stripe_deposit_amount || 0,
       })
     }
+    // Check Stripe Connect status
+    const connectRes = await fetch('/api/stripe/connect')
+    const connectData = await connectRes.json()
+    setStripeConnected(connectData.connected)
+
+    // Handle return from Stripe Connect
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('connect') === 'success') {
+      setStripeConnected(true)
+      window.history.replaceState({}, '', '/customise')
+    }
+
     setLoading(false)
+  }
+
+  async function handleStripeConnect() {
+    setStripeConnecting(true)
+    try {
+      const res = await fetch('/api/stripe/connect', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+      else alert('Error: ' + data.error)
+    } catch { alert('Something went wrong') }
+    setStripeConnecting(false)
   }
 
   async function handleSave() {
@@ -231,6 +256,35 @@ export default function CustomisePage() {
               {form.google_review_link && (
                 <div style={{marginTop:12, padding:'10px 14px', background:'rgba(201,168,76,0.08)', borderRadius:8, border:'1px solid rgba(201,168,76,0.2)', fontSize:12, color:GOLD}}>
                   ✦ Review requests are active — clients will be texted 2 hours after their appointment
+                </div>
+              )}
+            </div>
+
+            {/* Stripe Connect */}
+            <div style={{...cardStyle, border: stripeConnected ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(201,168,76,0.25)', background: stripeConnected ? 'rgba(34,197,94,0.04)' : 'rgba(201,168,76,0.04)'}}>
+              <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 4px'}}>🏦 Connect Your Stripe Account</h2>
+              <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14}}>
+                Connect your Stripe account so deposits from clients go directly to your bank. SalonPing takes a 1% platform fee per deposit automatically.
+              </p>
+              {stripeConnected ? (
+                <div style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px', background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.25)', borderRadius:10}}>
+                  <span style={{fontSize:16}}>✅</span>
+                  <div>
+                    <div style={{fontSize:13, fontWeight:700, color:'#4ade80'}}>Stripe Connected</div>
+                    <div style={{fontSize:11, color:'rgba(255,255,255,0.4)'}}>Client deposits go directly to your bank account</div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{padding:'10px 14px', background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:10, marginBottom:12}}>
+                    <div style={{fontSize:12, color:'#f87171', fontWeight:600}}>⚠️ Not connected</div>
+                    <div style={{fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:2}}>Deposits are currently held in SalonPing&apos;s Stripe account until you connect yours.</div>
+                  </div>
+                  <button onClick={handleStripeConnect} disabled={stripeConnecting}
+                    style={{padding:'10px 20px', background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, borderRadius:10, border:'none', cursor:'pointer', opacity: stripeConnecting ? 0.7 : 1}}>
+                    {stripeConnecting ? 'Connecting...' : '🔗 Connect Stripe Account'}
+                  </button>
+                  <p style={{fontSize:11, color:'rgba(255,255,255,0.3)', marginTop:8}}>Free to set up · Takes 2 minutes · Stripe handles all verification</p>
                 </div>
               )}
             </div>

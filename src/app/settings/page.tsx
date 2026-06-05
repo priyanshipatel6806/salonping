@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
 const GOLD = '#c9a84c'
@@ -9,6 +10,9 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [form, setForm] = useState({ name:'', phone:'', email:'' })
+  const [stripeConnected, setStripeConnected] = useState(false)
+  const [stripeAccountId, setStripeAccountId] = useState('')
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     async function load() {
@@ -16,9 +20,17 @@ export default function SettingsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       const { data: salon } = await supabase.from('salons').select('*').eq('owner_id', user?.id).single()
       if (salon) setForm({ name: salon.name || '', phone: salon.phone || '', email: salon.owner_email || '' })
+      const { data: settings } = await supabase.from('booking_settings').select('stripe_connected, stripe_account_id').eq('salon_id', salon?.id).single()
+      if (settings) {
+        setStripeConnected(settings.stripe_connected || false)
+        setStripeAccountId(settings.stripe_account_id || '')
+      }
     }
     load()
   }, [])
+
+  const stripeStatus = searchParams.get('stripe_connected')
+  const stripeError = searchParams.get('stripe_error')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setLoading(true)
@@ -36,17 +48,18 @@ export default function SettingsPage() {
   }
 
   const inputStyle = { width:'100%', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'12px 14px', fontSize:14, color:'#fff', outline:'none', boxSizing:'border-box' as const }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
   return (
     <div style={{background:'#0a0a0a', minHeight:'100vh', color:'#fff'}}>
       <nav style={{background:'#0a0a0a', borderBottom:'1px solid rgba(201,168,76,0.15)', position:'sticky', top:0, zIndex:50}}>
         <div style={{maxWidth:1100, margin:'0 auto', padding:'0 24px', height:60, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
           <div style={{display:'flex', alignItems:'center', gap:10}}>
-            <div style={{width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#2a1f08,#c9a84c)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>&#9986;</div>
+            <div style={{width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#2a1f08,#c9a84c)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>✄</div>
             <span style={{fontWeight:800, fontSize:17, color:'#fff'}}>SalonPing</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:2}}>
-            {NAV_LINKS.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color:'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none'}}>{label}</a> })}
+            {NAV_LINKS.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/settings' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none', fontWeight: href==='/settings' ? 700 : 400}}>{label}</a> })}
             <a href="/appointments/new" style={{marginLeft:8, background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>+ New</a>
           </div>
         </div>
@@ -78,9 +91,51 @@ export default function SettingsPage() {
 
           <button type="submit" disabled={loading}
             style={{width:'100%', background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:14, padding:'13px', borderRadius:12, border:'none', cursor:'pointer', opacity: loading ? 0.7 : 1}}>
-            {loading ? 'Saving...' : saved ? '&#10003; Saved!' : 'Save Settings'}
+            {loading ? 'Saving...' : saved ? '✓ Saved!' : 'Save Settings'}
           </button>
         </form>
+
+        {/* Stripe Connect */}
+        <div style={{marginTop:24, padding:24, background:'rgba(99,102,241,0.04)', border:`1px solid ${stripeConnected || stripeStatus === 'true' ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.25)'}`, borderRadius:16}}>
+          <h2 style={{fontSize:15, fontWeight:700, color: stripeConnected || stripeStatus === 'true' ? '#4ade80' : '#818cf8', margin:'0 0 4px'}}>
+            💳 {stripeConnected || stripeStatus === 'true' ? '✓ Stripe Connected' : 'Connect Your Stripe Account'}
+          </h2>
+          <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14, lineHeight:1.6}}>
+            {stripeConnected || stripeStatus === 'true'
+              ? `Your Stripe account is connected. Client deposits go directly to your bank. SalonPing takes a small 1% platform fee per deposit.`
+              : 'Required for deposit collection. Connect your Stripe account so client deposits land directly in your bank — not SalonPing\'s account.'}
+          </p>
+
+          {stripeStatus === 'true' && (
+            <div style={{padding:'10px 14px', background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.2)', borderRadius:8, fontSize:12, color:'#4ade80', marginBottom:14}}>
+              ✓ Successfully connected! Deposits will now go directly to your Stripe account.
+            </div>
+          )}
+          {stripeError && (
+            <div style={{padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, fontSize:12, color:'#f87171', marginBottom:14}}>
+              Connection failed: {stripeError}. Please try again.
+            </div>
+          )}
+
+          {stripeConnected || stripeStatus === 'true' ? (
+            <div style={{display:'flex', alignItems:'center', gap:12}}>
+              <div style={{fontSize:12, color:'rgba(255,255,255,0.4)'}}>Account ID: <code style={{color:'#818cf8'}}>{stripeAccountId || 'Connected'}</code></div>
+              <a href="/api/stripe/connect" style={{padding:'8px 16px', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'rgba(255,255,255,0.5)', fontSize:12, fontWeight:600, textDecoration:'none'}}>
+                Reconnect
+              </a>
+            </div>
+          ) : (
+            <a href="/api/stripe/connect" style={{display:'inline-block', padding:'11px 22px', background:'linear-gradient(135deg,#4338ca,#6366f1)', color:'#fff', fontWeight:700, fontSize:13, borderRadius:10, textDecoration:'none'}}>
+              Connect with Stripe →
+            </a>
+          )}
+
+          {!stripeConnected && stripeStatus !== 'true' && (
+            <div style={{marginTop:12, fontSize:11, color:'rgba(255,255,255,0.25)', lineHeight:1.6}}>
+              Free to connect. You&apos;ll need a Stripe account — create one free at stripe.com. After connecting, set a deposit amount in the Customise page.
+            </div>
+          )}
+        </div>
 
         {/* AI Voice Assistant Setup */}
         <div style={{marginTop:24, padding:24, background:'rgba(201,168,76,0.04)', border:'1px solid rgba(201,168,76,0.2)', borderRadius:16}}>
@@ -90,4 +145,50 @@ export default function SettingsPage() {
           </p>
           <div style={{display:'flex', flexDirection:'column', gap:10}}>
             {[
-              { n:'1', text:'Sign up at dashboard.vapi.ai (free to 
+              { n:'1', text:'Sign up at dashboard.vapi.ai (free to start)' },
+              { n:'2', text:'Create a new Assistant → set the system prompt to: "You are a booking assistant for [Salon Name]. Help clients book appointments."' },
+              { n:'3', text:'Add 3 tools: get_services, check_availability, create_booking — all pointing to your webhook URL below' },
+              { n:'4', text:'In each tool, add parameter: salon_id (string) = your salon ID from Supabase' },
+              { n:'5', text:'Connect your Twilio phone number to this Vapi assistant in the Vapi dashboard' },
+              { n:'6', text:'Test by calling your Twilio number — the AI will answer and book!' },
+            ].map(step => (
+              <div key={step.n} style={{display:'flex', gap:12, alignItems:'flex-start'}}>
+                <div style={{width:22, height:22, borderRadius:'50%', background:'rgba(201,168,76,0.15)', border:'1px solid rgba(201,168,76,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:GOLD, flexShrink:0}}>{step.n}</div>
+                <p style={{fontSize:12, color:'rgba(255,255,255,0.6)', lineHeight:1.6, margin:0}}>{step.text}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:14, padding:'10px 14px', background:'rgba(0,0,0,0.3)', borderRadius:8, fontFamily:'monospace', fontSize:11, color:'rgba(255,255,255,0.5)'}}>
+            Webhook URL: {appUrl}/api/vapi
+          </div>
+          <a href="https://dashboard.vapi.ai" target="_blank"
+            style={{display:'inline-block', marginTop:14, padding:'9px 18px', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.3)', borderRadius:9, color:GOLD, fontSize:13, fontWeight:600, textDecoration:'none'}}>
+            Open Vapi Dashboard →
+          </a>
+        </div>
+
+        {/* AI Chat Widget Info */}
+        <div style={{marginTop:16, padding:20, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14}}>
+          <h2 style={{fontSize:14, fontWeight:700, color:'#fff', margin:'0 0 6px'}}>🤖 AI Chat Widget</h2>
+          <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', lineHeight:1.6}}>
+            Already active on your booking page. Clients can ask questions about services, pricing, and availability.
+            Powered by Groq (LLaMA 3.1) — free up to 500K tokens/day.
+          </p>
+          <div style={{marginTop:10, padding:'8px 12px', background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.2)', borderRadius:8, fontSize:12, color:'#4ade80', fontWeight:600}}>
+            ✓ Active on all plans — no setup needed
+          </div>
+        </div>
+
+        {/* Sign Out */}
+        <div style={{marginTop:24, padding:20, background:'rgba(239,68,68,0.05)', border:'1px solid rgba(239,68,68,0.15)', borderRadius:14}}>
+          <h3 style={{fontSize:14, fontWeight:700, color:'#f87171', margin:'0 0 8px'}}>Sign out</h3>
+          <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14}}>Sign out of your SalonPing account</p>
+          <button onClick={handleSignOut}
+            style={{padding:'9px 20px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:9, color:'#f87171', fontSize:13, fontWeight:600, cursor:'pointer'}}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
