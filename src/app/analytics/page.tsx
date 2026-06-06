@@ -89,8 +89,7 @@ export default async function AnalyticsPage() {
             <span style={{ fontWeight: 800, fontSize: 17, color: '#fff' }}>SalonPing</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, padding: '6px 12px', borderRadius: 8, textDecoration: 'none' }}>{label}</a> })}
-            <a href="/analytics" style={{ marginLeft: 4, color: GOLD, fontSize: 13, padding: '6px 12px', borderRadius: 8, textDecoration: 'none', fontWeight: 700 }}>Analytics</a>
+            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: href === '/analytics' ? GOLD : 'rgba(255,255,255,0.5)', fontSize: 13, padding: '6px 12px', borderRadius: 8, textDecoration: 'none', fontWeight: href === '/analytics' ? 700 : 400 }}>{label}</a> })}
             <a href="/appointments/new" style={{ marginLeft: 8, background: `linear-gradient(135deg,#2a1f08,${GOLD})`, color: '#0a0a0a', fontWeight: 700, fontSize: 13, padding: '8px 16px', borderRadius: 8, textDecoration: 'none' }}>+ New</a>
           </div>
         </div>
