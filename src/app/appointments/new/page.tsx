@@ -11,7 +11,6 @@ export default function NewAppointmentPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [services, setServices] = useState<Service[]>([])
-  const [salonId, setSalonId] = useState('')
   const [error, setError] = useState('')
   const [form, setForm] = useState({ client_name:'', client_phone:'', client_email:'', service:'', date:'', time:'', reminder_channel:'sms' })
 
@@ -22,7 +21,6 @@ export default function NewAppointmentPage() {
       if (!user) { router.push('/login'); return }
       const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user.id).single()
       if (!salon) return
-      setSalonId(salon.id)
       const { data: svcs } = await supabase.from('services').select('id,name,price,duration_minutes').eq('salon_id', salon.id).eq('active', true).order('name')
       setServices(svcs || [])
     }
