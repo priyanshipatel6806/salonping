@@ -1,6 +1,6 @@
+import { createClient } from '@/lib/supabase'
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 const GOLD = '#c9a84c'
@@ -33,24 +33,18 @@ export default function NewAppointmentPage() {
     e.preventDefault(); setError('')
     if (!form.client_name || !form.client_phone || !form.service || !form.date || !form.time) { setError('Please fill in all required fields.'); return }
     setLoading(true)
-    const supabase = createClient()
     const scheduled_at = new Date(`${form.date}T${form.time}:00`).toISOString()
-    const { data: existing } = await supabase.from('appointments').select('id').eq('salon_id', salonId).eq('scheduled_at', scheduled_at).eq('status', 'confirmed').single()
-    if (existing) { setError('That time slot is already booked. Please choose a different time.'); setLoading(false); return }
-    const cleanPhone = form.client_phone.replace(/[\s\-\(\)]/g, '')
-    const e164Phone = cleanPhone.startsWith('+') ? cleanPhone : `+1${cleanPhone}`
-    const { data: apt, error: insertError } = await supabase.from('appointments').insert({
-      salon_id: salonId, client_name: form.client_name, client_phone: e164Phone, client_email: form.client_email || null,
-      service: form.service, scheduled_at, reminder_channel: form.reminder_channel, status: 'confirmed', booked_online: false,
-    }).select().single()
-    if (insertError || !apt) { setError(insertError?.message || 'Something went wrong.'); setLoading(false); return }
-    const scheduledAt = new Date(scheduled_at)
-    const reminders = [
-      { appointment_id: apt.id, reminder_type: '48h', scheduled_for: new Date(scheduledAt.getTime() - 48*60*60*1000).toISOString(), status: 'pending' },
-      { appointment_id: apt.id, reminder_type: '24h', scheduled_for: new Date(scheduledAt.getTime() - 24*60*60*1000).toISOString(), status: 'pending' },
-      { appointment_id: apt.id, reminder_type: '2h',  scheduled_for: new Date(scheduledAt.getTime() -  2*60*60*1000).toISOString(), status: 'pending' },
-    ].filter(r => new Date(r.scheduled_for) > new Date())
-    if (reminders.length) await supabase.from('reminders').insert(reminders)
+    const res = await fetch('/api/appointments/manual', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_name: form.client_name, client_phone: form.client_phone,
+        client_email: form.client_email, service: form.service,
+        scheduled_at, reminder_channel: form.reminder_channel,
+      }),
+    })
+    const data = await res.json()
+    if (!data.ok) { setError(data.error || 'Something went wrong.'); setLoading(false); return }
     router.push('/appointments')
   }
 

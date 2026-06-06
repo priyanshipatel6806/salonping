@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const next = searchParams.get('next') || '/dashboard'
 
   if (code) {
     const cookieStore = await cookies()
@@ -27,5 +28,7 @@ export async function GET(request: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`)
+  // Redirect to the page they originally tried to visit, or dashboard
+  const redirectTo = next.startsWith('/') ? `${origin}${next}` : `${origin}/dashboard`
+  return NextResponse.redirect(redirectTo)
 }

@@ -58,6 +58,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 400 })
     }
 
+    // Notify salon owner server-side — never call this from the client
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    fetch(appUrl + '/api/notify-owner', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.INTERNAL_API_SECRET || '',
+      },
+      body: JSON.stringify({
+        salon_id,
+        client_name,
+        client_phone: cleanPhone,
+        service,
+        scheduled_at,
+        appointment_id: newApt.id,
+      }),
+    }).catch(e => console.error('notify-owner failed:', e))
+
     return NextResponse.json({ ok: true, appointment: newApt })
 
   } catch (e: any) {

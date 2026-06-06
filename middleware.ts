@@ -10,6 +10,7 @@ const PROTECTED = [
   '/settings',
   '/clients',
   '/customise',
+  '/analytics',
 ]
 
 // Routes that logged-in users should not see (redirect to dashboard)
@@ -18,7 +19,6 @@ const AUTH_ROUTES = ['/login']
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Check if this is a protected or auth route
   const isProtected = PROTECTED.some(p => pathname === p || pathname.startsWith(p + '/'))
   const isAuthRoute = AUTH_ROUTES.some(p => pathname === p || pathname.startsWith(p + '/'))
 
@@ -47,14 +47,12 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Unauthenticated user trying to access protected route → login
   if (isProtected && !user) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Authenticated user visiting login page → dashboard
   if (isAuthRoute && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -71,6 +69,8 @@ export const config = {
     '/settings/:path*',
     '/clients/:path*',
     '/customise/:path*',
+    '/analytics/:path*',
+    '/analytics',
     '/login',
   ],
 }

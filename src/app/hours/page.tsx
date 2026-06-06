@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase'
 
 const GOLD = '#c9a84c'
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
-const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 type DayHours = { day_of_week: number; is_open: boolean; start_time: string; end_time: string }
 

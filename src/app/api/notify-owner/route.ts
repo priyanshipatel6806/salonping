@@ -29,26 +29,22 @@ export async function POST(request: NextRequest) {
       await sendSMS(salon.phone, message)
     }
     if (salon.owner_email) {
+      const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL + '/dashboard'
       await sendGmail(
         salon.owner_email,
-        `New Booking: ${client_name} - ${service}`,
-        `<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">
-          <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:20px;border-radius:12px;text-align:center;margin-bottom:20px">
-            <h1 style="color:white;margin:0;font-size:24px">New Booking!</h1>
-          </div>
-          <h2 style="color:#1e3a5f">You have a new appointment</h2>
-          <div style="background:#f0f4ff;border-radius:12px;padding:16px;margin:20px 0">
-            <p style="margin:4px 0"><strong>Client:</strong> ${client_name}</p>
-            <p style="margin:4px 0"><strong>Phone:</strong> ${client_phone}</p>
-            <p style="margin:4px 0"><strong>Service:</strong> ${service}</p>
-            <p style="margin:4px 0"><strong>Date:</strong> ${dateStr}</p>
-            <p style="margin:4px 0"><strong>Time:</strong> ${timeStr}</p>
-          </div>
-          <a href="https://salonping-app.vercel.app/dashboard"
-             style="display:inline-block;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:10px 20px;border-radius:8px;text-decoration:none">
-            View Dashboard
-          </a>
-        </div>`
+        'New Booking: ' + client_name + ' - ' + service,
+        '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px">' +
+        '<div style="background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:20px;border-radius:12px;text-align:center;margin-bottom:20px">' +
+        '<h1 style="color:white;margin:0;font-size:24px">New Booking!</h1></div>' +
+        '<h2 style="color:#1e3a5f">You have a new appointment</h2>' +
+        '<div style="background:#f0f4ff;border-radius:12px;padding:16px;margin:20px 0">' +
+        '<p style="margin:4px 0"><strong>Client:</strong> ' + client_name + '</p>' +
+        '<p style="margin:4px 0"><strong>Phone:</strong> ' + client_phone + '</p>' +
+        '<p style="margin:4px 0"><strong>Service:</strong> ' + service + '</p>' +
+        '<p style="margin:4px 0"><strong>Date:</strong> ' + dateStr + '</p>' +
+        '<p style="margin:4px 0"><strong>Time:</strong> ' + timeStr + '</p></div>' +
+        '<a href="' + dashboardUrl + '" style="display:inline-block;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:10px 20px;border-radius:8px;text-decoration:none">View Dashboard</a>' +
+        '</div>'
       )
     }
     return NextResponse.json({ ok: true })

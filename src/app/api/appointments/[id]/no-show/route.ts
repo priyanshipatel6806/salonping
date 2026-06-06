@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
-import { redirect } from 'next/navigation'
 
 export async function POST(
   request: NextRequest,
@@ -13,7 +12,6 @@ export async function POST(
 
   const sc = createServiceClient()
 
-  // Verify this appointment belongs to the owner's salon
   const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user.id).single()
   if (!salon) return NextResponse.json({ error: 'Salon not found' }, { status: 404 })
 
@@ -30,10 +28,8 @@ export async function POST(
 
   await sc.from('appointments').update({ status: 'no_show' }).eq('id', id)
 
-  // Cancel any pending reminders
   await sc.from('reminders').update({ status: 'cancelled' })
     .eq('appointment_id', id).eq('status', 'pending')
 
-  // Redirect back to appointments
   return NextResponse.redirect(new URL('/appointments', request.url))
 }

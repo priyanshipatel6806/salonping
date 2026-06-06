@@ -6,7 +6,7 @@ const GOLD = '#c9a84c'
 
 type Service = { id: string; name: string; duration_minutes: number; price: number; description: string; active: boolean }
 
-const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
