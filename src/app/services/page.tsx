@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase'
 
 const GOLD = '#c9a84c'
 
-type Service = { id: string; name: string; duration_minutes: number; price: number; description: string; active: boolean }
+type Service = { id: string; name: string; duration_minutes: number; price: number; description: string; active: boolean; category: string }
 
 const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
@@ -14,7 +14,7 @@ export default function ServicesPage() {
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState({ name:'', duration_minutes:60, price:0, description:'' })
+  const [form, setForm] = useState({ name:'', duration_minutes:60, price:0, description:'', category:'General' })
 
   useEffect(() => { loadServices() }, [])
 
@@ -38,7 +38,7 @@ export default function ServicesPage() {
     } else {
       await supabase.from('services').insert({ ...form, salon_id: salon?.id, active: true })
     }
-    setForm({ name:'', duration_minutes:60, price:0, description:'' })
+    setForm({ name:'', duration_minutes:60, price:0, description:'', category:'General' })
     setShowForm(false); setEditingId(null)
     await loadServices()
     setSaving(false)
@@ -51,7 +51,7 @@ export default function ServicesPage() {
   }
 
   function startEdit(s: Service) {
-    setForm({ name: s.name, duration_minutes: s.duration_minutes, price: s.price, description: s.description })
+    setForm({ name: s.name, duration_minutes: s.duration_minutes, price: s.price, description: s.description, category: s.category || 'General' })
     setEditingId(s.id); setShowForm(true)
   }
 
@@ -78,7 +78,7 @@ export default function ServicesPage() {
             <h1 style={{fontSize:26, fontWeight:900, color:'#fff', margin:0, letterSpacing:'-0.5px'}}>Services</h1>
             <p style={{fontSize:13, color:'rgba(255,255,255,0.4)', marginTop:4}}>{services.length} services in your menu</p>
           </div>
-          <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name:'', duration_minutes:60, price:0, description:'' }) }}
+          <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name:'', duration_minutes:60, price:0, description:'', category:'General' }) }}
             style={{background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'10px 20px', borderRadius:10, border:'none', cursor:'pointer'}}>
             + Add Service
           </button>
@@ -104,6 +104,10 @@ export default function ServicesPage() {
                 <label style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.6)', display:'block', marginBottom:6}}>Description (optional)</label>
                 <input style={inputStyle} value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Short description..." />
               </div>
+              <div>
+                <label style={{fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.6)', display:'block', marginBottom:6}}>Category</label>
+                <input style={inputStyle} value={form.category} onChange={e => setForm({...form, category: e.target.value})} placeholder="e.g. Hair, Nails, Lashes, Waxing" />
+              </div>
             </div>
             <div style={{display:'flex', gap:10}}>
               <button onClick={handleSave} disabled={!form.name || saving}
@@ -127,26 +131,27 @@ export default function ServicesPage() {
             <p style={{color:'rgba(255,255,255,0.4)', fontSize:13}}>Add your first service to start accepting bookings</p>
           </div>
         ) : (
-          <div style={{display:'flex', flexDirection:'column', gap:10}}>
-            {services.map(s => (
-              <div key={s.id} style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700, color:'#fff', fontSize:15, marginBottom:4}}>{s.name}</div>
-                  {s.description && <div style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:6}}>{s.description}</div>}
-                  <div style={{display:'flex', gap:16}}>
-                    <span style={{fontSize:12, color:'rgba(255,255,255,0.4)'}}>&#9201; {s.duration_minutes} min</span>
-                    <span style={{fontSize:12, fontWeight:700, color:GOLD}}>${s.price} CAD</span>
-                  </div>
-                </div>
-                <div style={{display:'flex', gap:8, marginLeft:20}}>
-                  <button onClick={() => startEdit(s)}
-                    style={{padding:'7px 14px', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.3)', borderRadius:8, color:GOLD, fontSize:12, fontWeight:600, cursor:'pointer'}}>
-                    Edit
-                  </button>
-                  <button onClick={() => handleDelete(s.id)}
-                    style={{padding:'7px 14px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:8, color:'#f87171', fontSize:12, fontWeight:600, cursor:'pointer'}}>
-                    Delete
-                  </button>
+          <div>
+            {Array.from(new Set(services.map(s => s.category || 'General'))).map(cat => (
+              <div key={cat} style={{marginBottom:24}}>
+                <div style={{fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10, paddingBottom:6, borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{cat}</div>
+                <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                  {services.filter(s => (s.category || 'General') === cat).map(s => (
+                    <div key={s.id} style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'16px 20px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:700, color:'#fff', fontSize:15, marginBottom:4}}>{s.name}</div>
+                        {s.description && <div style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:6}}>{s.description}</div>}
+                        <div style={{display:'flex', gap:16}}>
+                          <span style={{fontSize:12, color:'rgba(255,255,255,0.4)'}}>&#9201; {s.duration_minutes} min</span>
+                          <span style={{fontSize:12, fontWeight:700, color:GOLD}}>${s.price} CAD</span>
+                        </div>
+                      </div>
+                      <div style={{display:'flex', gap:8, marginLeft:20}}>
+                        <button onClick={() => startEdit(s)} style={{padding:'7px 14px', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.3)', borderRadius:8, color:GOLD, fontSize:12, fontWeight:600, cursor:'pointer'}}>Edit</button>
+                        <button onClick={() => handleDelete(s.id)} style={{padding:'7px 14px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:8, color:'#f87171', fontSize:12, fontWeight:600, cursor:'pointer'}}>Delete</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}

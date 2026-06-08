@@ -44,6 +44,8 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   const [salon, setSalon] = useState<any>(null)
   const [services, setServices] = useState<Service[]>([])
   const [workingHours, setWorkingHours] = useState<any[]>([])
+  const [blockedTimes, setBlockedTimes] = useState<any[]>([])
+  const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [step, setStep] = useState(1)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -76,22 +78,76 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     const { data: wh } = await supabase.from('working_hours').select('*')
       .eq('salon_id', settings.salon_id).order('day_of_week')
     setWorkingHours(wh || [])
+    // Load blocked times for this salon
+    const { data: blocked } = await supabase.from('blocked_times').select('*')
+      .eq('salon_id', settings.salon_id)
+    setBlockedTimes(blocked || [])
     setLoading(false)
   }
 
-  function generateSlots(date: Date, service: Service) {
+  async function generateSlots(date: Date, service: Service) {
     const dayOfWeek = date.getDay()
     const dayHours = workingHours.find(h => h.day_of_week === dayOfWeek)
     if (!dayHours || !dayHours.is_open) { setAvailableSlots([]); return }
-    const slots: Slot[] = []
+
+    // Fetch existing confirmed appointments for this date
+    const supabase = createClient()
+    const dateStr = date.toISOString().split('T')[0]
+    const { data: existingApts } = await supabase
+      .from('appointments').select('scheduled_at, service')
+      .eq('salon_id', salon.salon_id).eq('status', 'confirmed')
+      .gte('scheduled_at', `${dateStr}T00:00:00`)
+      .lt('scheduled_at', `${dateStr}T23:59:59`)
+
+    // Build set of blocked minute-ranges for the day
+    const blockedRanges: { start: number; end: number }[] = []
+
+    // 1. Existing appointments block their duration
+    for (const apt of existingApts || []) {
+      const aptDate = new Date(apt.scheduled_at)
+      const aptStart = aptDate.getHours() * 60 + aptDate.getMinutes()
+      const svc = services.find(s => s.name === apt.service)
+      const dur = svc?.duration_minutes || 30
+      blockedRanges.push({ start: aptStart, end: aptStart + dur })
+    }
+
+    // 2. blocked_times table entries
+    for (const block of blockedTimes) {
+      const blockStart = new Date(block.start_date + 'T12:00:00')
+      const blockEnd = new Date(block.end_date + 'T12:00:00')
+      blockStart.setHours(0, 0, 0, 0); blockEnd.setHours(23, 59, 59, 0)
+      const dayMidnight = new Date(date); dayMidnight.setHours(0, 0, 0, 0)
+
+      const matchesDate = (block.repeat_weekly
+        ? blockStart.getDay() === dayOfWeek
+        : dayMidnight >= blockStart && dayMidnight <= blockEnd)
+
+      if (matchesDate) {
+        if (block.start_time && block.end_time) {
+          const [bsh, bsm] = block.start_time.split(':').map(Number)
+          const [beh, bem] = block.end_time.split(':').map(Number)
+          blockedRanges.push({ start: bsh * 60 + bsm, end: beh * 60 + bem })
+        } else {
+          // Full day block
+          blockedRanges.push({ start: 0, end: 24 * 60 })
+        }
+      }
+    }
+
     const [startH, startM] = dayHours.start_time.split(':').map(Number)
     const [endH, endM] = dayHours.end_time.split(':').map(Number)
     let current = startH * 60 + startM
     const end = endH * 60 + endM - service.duration_minutes
+    const slots: Slot[] = []
+
     while (current <= end) {
-      const h = Math.floor(current / 60), m = current % 60
-      const label = `${h > 12 ? h-12 : h===0 ? 12 : h}:${m.toString().padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`
-      slots.push({ time:`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`, label })
+      const slotEnd = current + service.duration_minutes
+      const isBlocked = blockedRanges.some(r => current < r.end && slotEnd > r.start)
+      if (!isBlocked) {
+        const h = Math.floor(current / 60), m = current % 60
+        const label = `${h > 12 ? h-12 : h===0 ? 12 : h}:${m.toString().padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`
+        slots.push({ time:`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`, label })
+      }
       current += 30
     }
     setAvailableSlots(slots)
@@ -101,7 +157,18 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     const dayOfWeek = date.getDay()
     const dayHours = workingHours.find(h => h.day_of_week === dayOfWeek)
     const today = new Date(); today.setHours(0,0,0,0)
-    return dayHours?.is_open && date >= today
+    if (!dayHours?.is_open || date < today) return false
+    // Check full-day block-outs
+    const dayMidnight = new Date(date); dayMidnight.setHours(0,0,0,0)
+    for (const block of blockedTimes) {
+      const blockStart = new Date(block.start_date + 'T12:00:00'); blockStart.setHours(0,0,0,0)
+      const blockEnd = new Date(block.end_date + 'T12:00:00'); blockEnd.setHours(23,59,59,0)
+      const matchesDate = (block.repeat_weekly
+        ? blockStart.getDay() === dayOfWeek
+        : dayMidnight >= blockStart && dayMidnight <= blockEnd)
+      if (matchesDate && !block.start_time) return false // full-day block
+    }
+    return true
   }
 
   function getDaysInMonth(date: Date) {
@@ -110,7 +177,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   }
 
   function selectDate(date: Date) {
-    setSelectedDate(date); setSelectedSlot(null)
+    setSelectedDate(date); setSelectedSlot(null); setAvailableSlots([])
     if (selectedService) generateSlots(date, selectedService)
   }
 

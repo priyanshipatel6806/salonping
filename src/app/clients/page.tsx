@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
+const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/staff|Staff','/hours|Hours','/blocked|Block-out','/waitlist|Waitlist','/loyalty|Loyalty','/customise|Customise','/settings|Settings']
 
 export default async function ClientsPage() {
   const supabase = await createServerSupabaseClient()
@@ -13,6 +13,9 @@ export default async function ClientsPage() {
   const { data: appointments } = await supabase.from('appointments').select('*')
     .eq('salon_id', salon?.id).order('scheduled_at', { ascending: false })
   const { data: services } = await supabase.from('services').select('name,price').eq('salon_id', salon?.id)
+  const { data: profiles } = await supabase.from('client_profiles').select('phone,notes,birthday').eq('salon_id', salon?.id)
+  const profileMap: Record<string, { notes?: string; birthday?: string }> = {}
+  for (const p of profiles || []) profileMap[p.phone] = { notes: p.notes, birthday: p.birthday }
 
   const priceMap: Record<string, number> = {}
   for (const s of services || []) priceMap[s.name] = s.price
@@ -20,14 +23,15 @@ export default async function ClientsPage() {
   const clientMap: Record<string, {
     name: string; phone: string; email: string;
     visits: number; lastVisit: string; services: string[]; totalSpend: number;
-    upcoming: number; channel: string; noShows: number;
+    upcoming: number; channel: string; noShows: number; notes?: string; birthday?: string;
   }> = {}
 
   for (const apt of appointments || []) {
     const key = apt.client_phone
     if (!clientMap[key]) {
       clientMap[key] = { name: apt.client_name, phone: apt.client_phone, email: apt.client_email || '',
-        visits: 0, lastVisit: apt.scheduled_at, services: [], totalSpend: 0, upcoming: 0, channel: apt.reminder_channel || 'sms', noShows: 0 }
+        visits: 0, lastVisit: apt.scheduled_at, services: [], totalSpend: 0, upcoming: 0, channel: apt.reminder_channel || 'sms', noShows: 0,
+        notes: profileMap[apt.client_phone]?.notes, birthday: profileMap[apt.client_phone]?.birthday }
     }
     const c = clientMap[key]
     if (apt.status === 'confirmed') {
@@ -59,10 +63,17 @@ export default async function ClientsPage() {
         </div>
       </nav>
 
-      <div style={{maxWidth:1200, margin:'0 auto', padding:'40px 24px'}}>
-        <div style={{marginBottom:28}}>
-          <h1 style={{fontSize:26, fontWeight:900, color:'#fff', margin:0, letterSpacing:'-0.5px'}}>Clients</h1>
-          <p style={{fontSize:13, color:'rgba(255,255,255,0.4)', marginTop:4}}>{clients.length} unique clients in your database</p>
+      <div style={{maxWidth:1200, margin:'0 auto', padding:'32px 16px'}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:24, flexWrap:'wrap', gap:12}}>
+          <div>
+            <h1 style={{fontSize:24, fontWeight:900, color:'#fff', margin:0, letterSpacing:'-0.5px'}}>Clients</h1>
+            <p style={{fontSize:13, color:'rgba(255,255,255,0.4)', marginTop:4}}>{clients.length} unique clients in your database</p>
+          </div>
+          <a href={`data:text/csv;charset=utf-8,${encodeURIComponent(['Name,Phone,Email,Visits,Total Spend,No-shows,Last Visit,Services',...clients.map(c=>[c.name,c.phone,c.email,c.visits,c.totalSpend,c.noShows,new Date(c.lastVisit).toLocaleDateString('en-CA'),c.services.join(';')].map(f=>`"${f}"`).join(','))].join('\n'))}`}
+            download="clients.csv"
+            style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, color:'rgba(255,255,255,0.6)', fontSize:13, fontWeight:600, padding:'9px 16px', textDecoration:'none', display:'inline-block'}}>
+            ↓ Export CSV
+          </a>
         </div>
         <div style={{display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14, marginBottom:28}}>
           {[
@@ -93,7 +104,8 @@ export default async function ClientsPage() {
               ))}
             </div>
             {clients.map((c, i) => (
-              <div key={c.phone} style={{display:'grid', gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1fr 1fr 1fr', gap:0, padding:'16px 24px', borderBottom: i < clients.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none'}}>
+              <div key={c.phone}>
+              <div style={{display:'grid', gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1fr 1fr 1fr', gap:0, padding:'16px 24px', borderBottom: i < clients.length-1 && !c.notes && !c.birthday ? '1px solid rgba(255,255,255,0.04)' : 'none'}}>
                 <div style={{display:'flex', alignItems:'center', gap:12}}>
                   <div style={{width:36, height:36, borderRadius:'50%', background:`linear-gradient(135deg,#2a1f08,${GOLD})`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:13, color:'#0a0a0a', flexShrink:0}}>
                     {c.name.charAt(0).toUpperCase()}
@@ -124,9 +136,16 @@ export default async function ClientsPage() {
                   {new Date(c.lastVisit).toLocaleDateString('en-CA', {month:'short', day:'numeric', year:'numeric'})}
                 </div>
                 <div style={{display:'flex', alignItems:'center', gap:4, flexWrap:'wrap'}}>
-                  {c.services.slice(0,2).map(s => <span key={s} style={{fontSize:10, padding:'2px 7px', borderRadius:100, background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.55)'}}>{s.length > 12 ? s.slice(0,12)+'…' : s}</span>)}
+                  {c.services.slice(0,2).map(s => <span key={s} style={{fontSize:10, padding:'2px 7px', borderRadius:100, background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.55)'}}>{s.length > 12 ? s.slice(0,12)+'...' : s}</span>)}
                   {c.services.length > 2 && <span style={{fontSize:10, color:'rgba(255,255,255,0.35)'}}>+{c.services.length-2}</span>}
                 </div>
+              </div>
+              {(c.notes || c.birthday) && (
+                <div style={{display:'flex', gap:12, padding:'4px 24px 12px 72px', flexWrap:'wrap', borderBottom: i < clients.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none'}}>
+                  {c.notes && <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', background:'rgba(255,255,255,0.04)', borderRadius:8, padding:'4px 10px', borderLeft:'2px solid rgba(201,168,76,0.4)'}}>Note: {c.notes.length > 80 ? c.notes.slice(0,80)+'...' : c.notes}</div>}
+                  {c.birthday && <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', background:'rgba(255,255,255,0.04)', borderRadius:8, padding:'4px 10px'}}>Birthday: {new Date(c.birthday + 'T12:00:00').toLocaleDateString('en-CA', {month:'long', day:'numeric'})}</div>}
+                </div>
+              )}
               </div>
             ))}
           </div>

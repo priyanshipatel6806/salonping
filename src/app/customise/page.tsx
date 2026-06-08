@@ -14,6 +14,9 @@ export default function CustomisePage() {
   const [salonId, setSalonId] = useState('')
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
+  const [uploadingGallery, setUploadingGallery] = useState(false)
+  const [gallery, setGallery] = useState<{id:string;url:string;caption:string}[]>([])
+  const galleryRef = useRef<HTMLInputElement>(null)
   const [slugError, setSlugError] = useState('')
   const [stripeConnected, setStripeConnected] = useState(false)
   const [stripeConnecting, setStripeConnecting] = useState(false)
@@ -32,6 +35,8 @@ export default function CustomisePage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user?.id).single()
     setSalonId(salon?.id || '')
+    const { data: galleryData } = await supabase.from('gallery_photos').select('id,url,caption').eq('salon_id', salon?.id).order('sort_order')
+    setGallery(galleryData || [])
     const { data: settings } = await supabase.from('booking_settings').select('*').eq('salon_id', salon?.id).single()
     if (settings) {
       setSlug(settings.slug)
@@ -293,17 +298,70 @@ export default function CustomisePage() {
               )}
             </div>
 
+            {/* Photo Gallery */}
+            <div style={{...cardStyle, border:'1px solid rgba(255,255,255,0.1)'}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14}}>
+                <div>
+                  <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 4px'}}>📸 Photo Gallery</h2>
+                  <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', margin:0}}>Show your work on the booking page</p>
+                </div>
+                <input ref={galleryRef} type="file" accept="image/*" multiple style={{display:'none'}}
+                  onChange={async (e) => {
+                    if (!e.target.files?.length) return
+                    setUploadingGallery(true)
+                    const supabase = createClient()
+                    for (const file of Array.from(e.target.files)) {
+                      const ext = file.name.split('.').pop()
+                      const path = `gallery/${salonId}/${Date.now()}.${ext}`
+                      const { data: uploadData } = await supabase.storage.from('salon-assets').upload(path, file, { upsert: false })
+                      if (uploadData) {
+                        const { data: urlData } = supabase.storage.from('salon-assets').getPublicUrl(path)
+                        await supabase.from('gallery_photos').insert({ salon_id: salonId, url: urlData.publicUrl, sort_order: gallery.length })
+                      }
+                    }
+                    const { data: newGallery } = await supabase.from('gallery_photos').select('id,url,caption').eq('salon_id', salonId).order('sort_order')
+                    setGallery(newGallery || [])
+                    setUploadingGallery(false)
+                    e.target.value = ''
+                  }}
+                />
+                <button onClick={() => galleryRef.current?.click()} disabled={uploadingGallery}
+                  style={{padding:'8px 14px', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, color:'rgba(255,255,255,0.7)', fontSize:13, cursor:'pointer', fontWeight:600}}>
+                  {uploadingGallery ? 'Uploading…' : '+ Upload Photos'}
+                </button>
+              </div>
+              {gallery.length === 0 ? (
+                <div style={{textAlign:'center', padding:'24px', background:'rgba(255,255,255,0.02)', borderRadius:12, border:'1px dashed rgba(255,255,255,0.1)'}}>
+                  <div style={{fontSize:28, marginBottom:8}}>📷</div>
+                  <p style={{fontSize:13, color:'rgba(255,255,255,0.4)', margin:0}}>No photos yet. Upload before/after shots to showcase your work.</p>
+                </div>
+              ) : (
+                <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(100px,1fr))', gap:8}}>
+                  {gallery.map(photo => (
+                    <div key={photo.id} style={{position:'relative', aspectRatio:'1', borderRadius:10, overflow:'hidden', background:'rgba(255,255,255,0.05)'}}>
+                      <img src={photo.url} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                      <button onClick={async () => {
+                        const supabase = createClient()
+                        await supabase.from('gallery_photos').delete().eq('id', photo.id)
+                        setGallery(gallery.filter(p => p.id !== photo.id))
+                      }} style={{position:'absolute', top:4, right:4, background:'rgba(0,0,0,0.7)', border:'none', borderRadius:'50%', width:22, height:22, color:'#fff', cursor:'pointer', fontSize:13, display:'flex', alignItems:'center', justifyContent:'center'}}>x</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Live URL */}
             {slug && (
               <div style={{...cardStyle, border:'1px solid rgba(201,168,76,0.2)', background:'rgba(201,168,76,0.03)'}}>
-                <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 8px'}}>🔗 Your Booking Link</h2>
+                <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:'0 0 8px'}}>Your Booking Link</h2>
                 <div style={{display:'flex', alignItems:'center', gap:10}}>
                   <code style={{flex:1, fontSize:13, color:GOLD, background:'rgba(255,255,255,0.04)', padding:'10px 14px', borderRadius:8, wordBreak:'break-all'}}>
                     {appUrl}/book/{slug}
                   </code>
-                  <a href={`${appUrl}/book/${slug}`} target="_blank"
-                    style={{padding:'10px 16px', background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, borderRadius:10, textDecoration:'none', whiteSpace:'nowrap'}}>
-                    Preview →
+                  <a href={appUrl + '/book/' + slug} target="_blank"
+                    style={{padding:'10px 16px', background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, borderRadius:10, textDecoration:'none', whiteSpace:'nowrap'}}>
+                    Preview
                   </a>
                 </div>
               </div>
