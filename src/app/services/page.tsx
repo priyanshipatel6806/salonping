@@ -65,7 +65,7 @@ export default function ServicesPage() {
             <div style={{width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#2a1f08,#c9a84c)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>&#9986;</div>
             <span style={{fontWeight:800, fontSize:17, color:'#fff'}}>SalonPing</span>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:2}}>
+          <div style={{display:'flex', alignItems:'center', gap:2, overflowX:'auto', scrollbarWidth:'none' as const, msOverflowStyle:'none' as const}}>
             {NAV_LINKS.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color:'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none'}}>{label}</a> })}
             <a href="/appointments/new" style={{marginLeft:8, background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>+ New</a>
           </div>

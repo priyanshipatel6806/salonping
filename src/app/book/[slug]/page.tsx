@@ -520,7 +520,9 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                       className="h-9 rounded-xl text-sm font-medium transition-all"
                       style={isSelected
                         ? {background:`linear-gradient(135deg,#2a1f08,${GOLD})`,color:'#0a0a0a',fontWeight:700}
-                        : available ? {color:'rgba(255,255,255,0.85)'} : {color:'rgba(255,255,255,0.15)',cursor:'not-allowed'}}>
+                        : available
+                          ? {color:'rgba(255,255,255,0.9)', border:'1px solid rgba(201,168,76,0.25)', background:'rgba(201,168,76,0.06)'}
+                          : {color:'rgba(255,255,255,0.15)',cursor:'not-allowed', border:'1px solid transparent'}}>
                       {i+1}
                     </button>
                   )

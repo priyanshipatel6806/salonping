@@ -64,7 +64,7 @@ export default function IntakePage() {
             <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>SalonPing</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: href === '/intake' ? GOLD : 'rgba(255,255,255,0.5)', fontSize: 11, padding: '4px 8px', borderRadius: 8, textDecoration: 'none', fontWeight: href === '/intake' ? 700 : 400 }}>{label}</a> })}
+            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: href === '/intake' ? GOLD : 'rgba(255,255,255,0.5)', fontSize: 11, padding: '4px 8px', borderRadius: 8, textDecoration: 'none', fontWeight: href === '/intake' ? 700 : 400, whiteSpace: 'nowrap' as const }}>{label}</a> })}
           </div>
         </div>
       </nav>

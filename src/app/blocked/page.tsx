@@ -67,7 +67,7 @@ export default function BlockedPage() {
             <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>SalonPing</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: href === '/blocked' ? GOLD : 'rgba(255,255,255,0.5)', fontSize: 12, padding: '5px 10px', borderRadius: 8, textDecoration: 'none', fontWeight: href === '/blocked' ? 700 : 400 }}>{label}</a> })}
+            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: href === '/blocked' ? GOLD : 'rgba(255,255,255,0.5)', fontSize: 12, padding: '5px 10px', borderRadius: 8, textDecoration: 'none', fontWeight: href === '/blocked' ? 700 : 400, whiteSpace: 'nowrap' as const }}>{label}</a> })}
           </div>
         </div>
       </nav>

@@ -6,7 +6,7 @@ const features = [
   { icon: '💬', title: 'Automatic SMS & WhatsApp Reminders', desc: 'Clients get reminders 48h, 24h, and 2h before their appointment. Zero effort from you.' },
   { icon: '📅', title: 'Beautiful Online Booking Page', desc: 'Your own branded link with custom URL. Share on Instagram, Google, WhatsApp — clients book 24/7.' },
   { icon: '🤖', title: 'AI Assistant on Every Booking Page', desc: 'An intelligent chat widget answers client questions about services and availability.' },
-  { icon: '📉', title: 'Reduce No-Shows by 27%', desc: 'Automatic reminders at 48h, 24h, and 2h before every appointment keep clients from forgetting.' },
+  { icon: '🚫', title: 'Reduce No-Shows by 27%', desc: 'Automatic reminders at 48h, 24h, and 2h before every appointment keep clients from forgetting.' },
   { icon: '⭐', title: 'Auto Google Review Requests', desc: 'After every completed appointment, clients automatically receive a text asking for a Google review.' },
   { icon: '👥', title: 'Built-in Client Database', desc: 'See every client, their visit history, total spend, and favourite services — all in one place.' },
 ]
@@ -187,11 +187,17 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'36px 24px', textAlign:'center'}}>
+      <footer style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'40px 24px', textAlign:'center'}}>
         <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginBottom:16}}>
           <div style={{width:28, height:28, borderRadius:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`,
             display:'flex', alignItems:'center', justifyContent:'center', fontSize:14}}>&#9986;</div>
           <span style={{fontWeight:800, fontSize:16, color:'#fff'}}>SalonPing</span>
+        </div>
+        <div style={{display:'flex', gap:24, justifyContent:'center', flexWrap:'wrap', marginBottom:14}}>
+          <Link href="/pricing" style={{fontSize:13, color:'rgba(255,255,255,0.35)', textDecoration:'none'}}>Pricing</Link>
+          <a href="mailto:support@salonping.com" style={{fontSize:13, color:'rgba(255,255,255,0.35)', textDecoration:'none'}}>Contact</a>
+          <a href="/privacy" style={{fontSize:13, color:'rgba(255,255,255,0.35)', textDecoration:'none'}}>Privacy Policy</a>
+          <a href="/terms" style={{fontSize:13, color:'rgba(255,255,255,0.35)', textDecoration:'none'}}>Terms of Service</a>
         </div>
         <p style={{fontSize:13, color:'rgba(255,255,255,0.25)', margin:0}}>
           &copy; {new Date().getFullYear()} SalonPing. Built for salon owners who value their time.

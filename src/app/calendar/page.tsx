@@ -104,7 +104,7 @@ export default function CalendarPage() {
             <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>SalonPing</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: href === '/calendar' ? GOLD : 'rgba(255,255,255,0.5)', fontSize: 12, padding: '5px 10px', borderRadius: 8, textDecoration: 'none', fontWeight: href === '/calendar' ? 700 : 400 }}>{label}</a> })}
+            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: href === '/calendar' ? GOLD : 'rgba(255,255,255,0.5)', fontSize: 12, padding: '5px 10px', borderRadius: 8, textDecoration: 'none', fontWeight: href === '/calendar' ? 700 : 400, whiteSpace: 'nowrap' as const }}>{label}</a> })}
             <a href="/appointments/new" style={{ marginLeft: 6, background: `linear-gradient(135deg,#2a1f08,${GOLD})`, color: '#0a0a0a', fontWeight: 700, fontSize: 12, padding: '7px 14px', borderRadius: 8, textDecoration: 'none' }}>+ New</a>
           </div>
         </div>

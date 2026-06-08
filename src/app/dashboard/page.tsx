@@ -70,7 +70,7 @@ export default async function DashboardPage() {
             <span style={{fontWeight:800, fontSize:16, color:'#fff'}}>SalonPing</span>
           </div>
           <div className="dash-nav-links" style={{display:'flex', alignItems:'center', gap:2, flexWrap:'wrap'}}>
-            {NAV.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/dashboard' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:11, padding:'4px 8px', borderRadius:8, textDecoration:'none', fontWeight: href==='/dashboard' ? 700 : 400}}>{label}</a> })}
+            {NAV.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/dashboard' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:11, padding:'4px 8px', borderRadius:8, textDecoration:'none', fontWeight: href==='/dashboard' ? 700 : 400, whiteSpace:'nowrap' as const}}>{label}</a> })}
             <a href="/appointments/new" style={{marginLeft:6, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:11, padding:'7px 12px', borderRadius:8, textDecoration:'none'}}>+ New</a>
           </div>
           <div className="dash-nav-mobile" style={{display:'none', gap:8}}>

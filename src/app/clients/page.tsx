@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 const GOLD = '#c9a84c'
 const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/staff|Staff','/hours|Hours','/blocked|Block-out','/waitlist|Waitlist','/loyalty|Loyalty','/customise|Customise','/settings|Settings']
@@ -56,8 +57,8 @@ export default async function ClientsPage() {
             <div style={{width:32, height:32, borderRadius:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>{'✄'}</div>
             <span style={{fontWeight:800, fontSize:17, color:'#fff'}}>SalonPing</span>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:2}}>
-            {NAV.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/clients' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none', fontWeight: href==='/clients' ? 700 : 400}}>{label}</a> })}
+          <div style={{display:'flex', alignItems:'center', gap:2, overflowX:'auto', scrollbarWidth:'none' as const, msOverflowStyle:'none' as const}}>
+            {NAV.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/clients' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none', fontWeight: href==='/clients' ? 700 : 400, whiteSpace:'nowrap' as const}}>{label}</a> })}
             <a href="/appointments/new" style={{marginLeft:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>{'+ New'}</a>
           </div>
         </div>
@@ -105,7 +106,7 @@ export default async function ClientsPage() {
             </div>
             {clients.map((c, i) => (
               <div key={c.phone}>
-              <div style={{display:'grid', gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1fr 1fr 1fr', gap:0, padding:'16px 24px', borderBottom: i < clients.length-1 && !c.notes && !c.birthday ? '1px solid rgba(255,255,255,0.04)' : 'none'}}>
+              <a href={`/clients/${encodeURIComponent(c.phone)}`} className="client-row" style={{textDecoration:'none', display:'grid', gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1fr 1fr 1fr', gap:0, padding:'16px 24px', borderBottom: i < clients.length-1 && !c.notes && !c.birthday ? '1px solid rgba(255,255,255,0.04)' : 'none'}}>
                 <div style={{display:'flex', alignItems:'center', gap:12}}>
                   <div style={{width:36, height:36, borderRadius:'50%', background:`linear-gradient(135deg,#2a1f08,${GOLD})`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:13, color:'#0a0a0a', flexShrink:0}}>
                     {c.name.charAt(0).toUpperCase()}
@@ -139,7 +140,7 @@ export default async function ClientsPage() {
                   {c.services.slice(0,2).map(s => <span key={s} style={{fontSize:10, padding:'2px 7px', borderRadius:100, background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.55)'}}>{s.length > 12 ? s.slice(0,12)+'...' : s}</span>)}
                   {c.services.length > 2 && <span style={{fontSize:10, color:'rgba(255,255,255,0.35)'}}>+{c.services.length-2}</span>}
                 </div>
-              </div>
+              </a>
               {(c.notes || c.birthday) && (
                 <div style={{display:'flex', gap:12, padding:'4px 24px 12px 72px', flexWrap:'wrap', borderBottom: i < clients.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none'}}>
                   {c.notes && <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', background:'rgba(255,255,255,0.04)', borderRadius:8, padding:'4px 10px', borderLeft:'2px solid rgba(201,168,76,0.4)'}}>Note: {c.notes.length > 80 ? c.notes.slice(0,80)+'...' : c.notes}</div>}

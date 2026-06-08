@@ -58,8 +58,8 @@ function SettingsInner() {
             <div style={{width:32, height:32, borderRadius:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>✄</div>
             <span style={{fontWeight:800, fontSize:17, color:'#fff'}}>SalonPing</span>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:2}}>
-            {NAV_LINKS.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/settings' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none', fontWeight: href==='/settings' ? 700 : 400}}>{label}</a> })}
+          <div style={{display:'flex', alignItems:'center', gap:2, overflowX:'auto', scrollbarWidth:'none' as const}}>
+            {NAV_LINKS.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/settings' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none', fontWeight: href==='/settings' ? 700 : 400, whiteSpace:'nowrap' as const}}>{label}</a> })}
             <a href="/appointments/new" style={{marginLeft:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>+ New</a>
           </div>
         </div>
@@ -133,31 +133,21 @@ function SettingsInner() {
 
         {/* AI Voice Assistant Setup */}
         <div style={{marginTop:16, padding:24, background:'rgba(201,168,76,0.04)', border:'1px solid rgba(201,168,76,0.2)', borderRadius:16}}>
-          <h2 style={{fontSize:15, fontWeight:700, color:GOLD, margin:'0 0 4px'}}>🎙️ AI Voice Assistant</h2>
-          <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:16}}>
-            Premium plan feature. Clients call your salon number — AI answers and books appointments automatically.
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8, marginBottom:10}}>
+            <h2 style={{fontSize:15, fontWeight:700, color:GOLD, margin:0}}>🎙️ AI Voice Assistant</h2>
+            <span style={{fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:100, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', color:'#a78bfa'}}>Premium Plan</span>
+          </div>
+          <p style={{fontSize:13, color:'rgba(255,255,255,0.55)', lineHeight:1.7, marginBottom:16}}>
+            Clients can call your salon number and an AI assistant will answer, check your schedule, and book appointments automatically — 24/7, no effort from you.
           </p>
-          <div style={{display:'flex', flexDirection:'column', gap:10}}>
-            {[
-              { n:'1', text:'Sign up at dashboard.vapi.ai (free to start)' },
-              { n:'2', text:'Create a new Assistant → Inbound → Schedule appointments' },
-              { n:'3', text:'Add 3 tools: get_services, check_availability, create_booking — all pointing to your webhook URL below' },
-              { n:'4', text:'In each tool, add parameter: salon_id (string) = your salon ID from Supabase' },
-              { n:'5', text:'Connect your Twilio phone number to this Vapi assistant in the Vapi dashboard' },
-              { n:'6', text:'Test by calling your Twilio number — the AI will answer and book!' },
-            ].map(step => (
-              <div key={step.n} style={{display:'flex', gap:12, alignItems:'flex-start'}}>
-                <div style={{width:22, height:22, borderRadius:'50%', background:'rgba(201,168,76,0.15)', border:'1px solid rgba(201,168,76,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:GOLD, flexShrink:0}}>{step.n}</div>
-                <p style={{fontSize:12, color:'rgba(255,255,255,0.6)', lineHeight:1.6, margin:0}}>{step.text}</p>
-              </div>
-            ))}
+          <div style={{padding:'12px 16px', background:'rgba(201,168,76,0.06)', border:'1px solid rgba(201,168,76,0.15)', borderRadius:10, marginBottom:16}}>
+            <p style={{fontSize:12, color:'rgba(255,255,255,0.5)', margin:0, lineHeight:1.7}}>
+              To activate, upgrade to the <strong style={{color:GOLD}}>Premium plan</strong> and email us at{' '}
+              <a href="mailto:support@salonping.com" style={{color:GOLD, textDecoration:'none'}}>support@salonping.com</a> — we&apos;ll set up your AI phone number within 24 hours.
+            </p>
           </div>
-          <div style={{marginTop:14, padding:'10px 14px', background:'rgba(0,0,0,0.3)', borderRadius:8, fontFamily:'monospace', fontSize:11, color:'rgba(255,255,255,0.5)', wordBreak:'break-all'}}>
-            Webhook URL: {appUrl}/api/vapi
-          </div>
-          <a href="https://dashboard.vapi.ai" target="_blank"
-            style={{display:'inline-block', marginTop:14, padding:'9px 18px', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.3)', borderRadius:9, color:GOLD, fontSize:13, fontWeight:600, textDecoration:'none'}}>
-            Open Vapi Dashboard →
+          <a href="/pricing" style={{display:'inline-block', padding:'9px 18px', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.3)', borderRadius:9, color:GOLD, fontSize:13, fontWeight:600, textDecoration:'none'}}>
+            View Premium Plan →
           </a>
         </div>
 
