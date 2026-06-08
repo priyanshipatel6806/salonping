@@ -11,7 +11,8 @@ export async function POST(request: NextRequest) {
   if (!salon) return NextResponse.json({ ok: false, error: 'Salon not found' }, { status: 404 })
 
   const body = await request.json()
-  const { client_name, client_phone, client_email, service, scheduled_at, reminder_channel } = body
+  const { client_name, client_phone, client_email, service, scheduled_at, reminder_channel,
+    notes, staff_id, recurrence_id, recurrence_rule } = body
 
   if (!client_name || !client_phone || !service || !scheduled_at) {
     return NextResponse.json({ ok: false, error: 'Missing required fields' }, { status: 400 })
@@ -32,6 +33,10 @@ export async function POST(request: NextRequest) {
     client_email: client_email || null, service, scheduled_at,
     reminder_channel: reminder_channel || 'sms',
     status: 'confirmed', booked_online: false,
+    notes: notes || null,
+    staff_id: staff_id || null,
+    recurrence_id: recurrence_id || null,
+    recurrence_rule: recurrence_rule || null,
   }).select().single()
 
   if (error || !apt) return NextResponse.json({ ok: false, error: error?.message }, { status: 400 })

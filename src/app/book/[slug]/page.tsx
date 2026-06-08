@@ -39,6 +39,51 @@ function Confetti() {
   )
 }
 
+function WaitlistJoin({ salonId, clientName, serviceName, preferredDate }: { salonId: string; clientName: string; serviceName: string; preferredDate: Date }) {
+  const [joined, setJoined] = useState(false)
+  const [joining, setJoining] = useState(false)
+  const [wlForm, setWlForm] = useState({ name: clientName, phone: '', email: '', channel: 'sms' })
+
+  async function handleJoin() {
+    if (!wlForm.phone) return
+    setJoining(true)
+    const supabase = createClient()
+    await supabase.from('waitlist').insert({
+      salon_id: salonId, client_name: wlForm.name || clientName,
+      client_phone: wlForm.phone, client_email: wlForm.email || null,
+      service: serviceName, preferred_date: preferredDate.toISOString().split('T')[0],
+      reminder_channel: wlForm.channel,
+    })
+    setJoined(true)
+    setJoining(false)
+  }
+
+  if (joined) return (
+    <div className="rounded-xl px-4 py-3 text-sm" style={{background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.2)', color:'#4ade80'}}>
+      ✓ You&apos;re on the waitlist! We&apos;ll text you if a slot opens up.
+    </div>
+  )
+
+  return (
+    <div className="rounded-xl p-4" style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.1)'}}>
+      <p className="text-sm font-semibold mb-3 text-white">Join the waitlist for this day</p>
+      <div className="space-y-2 text-left">
+        <input value={wlForm.name} onChange={e => setWlForm({...wlForm, name: e.target.value})} placeholder="Your name"
+          className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none"
+          style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)'}} />
+        <input value={wlForm.phone} onChange={e => setWlForm({...wlForm, phone: e.target.value})} placeholder="Phone (+1 226...)" type="tel"
+          className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none"
+          style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)'}} />
+        <button onClick={handleJoin} disabled={joining || !wlForm.phone}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
+          style={{background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a'}}>
+          {joining ? 'Joining...' : 'Notify me when a slot opens'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function BookingPage({ params }: { params: Promise<{ slug: string }> }) {
   const [slug, setSlug] = useState('')
   const [salon, setSalon] = useState<any>(null)
@@ -53,6 +98,8 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([])
   const [form, setForm] = useState({ name:'', phone:'', email:'', reminder_channel:'sms' })
+  const [intakeQuestions, setIntakeQuestions] = useState<{id:string;question:string;required:boolean}[]>([])
+  const [intakeAnswers, setIntakeAnswers] = useState<Record<string,string>>({})
   const [booking, setBooking] = useState(false)
   const [booked, setBooked] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -82,6 +129,10 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     const { data: blocked } = await supabase.from('blocked_times').select('*')
       .eq('salon_id', settings.salon_id)
     setBlockedTimes(blocked || [])
+    // Load active intake questions
+    const { data: questions } = await supabase.from('intake_questions').select('id,question,required')
+      .eq('salon_id', settings.salon_id).eq('active', true).order('sort_order')
+    setIntakeQuestions(questions || [])
     setLoading(false)
   }
 
@@ -216,7 +267,8 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
       const bookResponse = await fetch('/api/book', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ salon_id:salon.salon_id, client_name:form.name, client_phone:form.phone,
-          client_email:form.email, service:selectedService.name, scheduled_at, reminder_channel:form.reminder_channel }),
+          client_email:form.email, service:selectedService.name, scheduled_at, reminder_channel:form.reminder_channel,
+          intake_answers: intakeQuestions.length > 0 ? intakeQuestions.map(q => ({ question: q.question, answer: intakeAnswers[q.id] || '' })) : [] }),
       })
       const bookData = await bookResponse.json()
       if (bookData.ok) {
@@ -501,7 +553,12 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                     )}
                   </>
                 ) : (
-                  <p className="text-sm" style={{color:'rgba(255,255,255,0.35)'}}>No available slots for this day.</p>
+                  <div className="text-center py-4">
+                    <p className="text-sm mb-4" style={{color:'rgba(255,255,255,0.35)'}}>No available slots for this day.</p>
+                    {salon?.waitlist_enabled && selectedDate && (
+                      <WaitlistJoin salonId={salon.salon_id} clientName={form.name} serviceName={selectedService?.name || ''} preferredDate={selectedDate} />
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -575,6 +632,26 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                     ))}
                   </div>
                 </div>
+                {/* Intake questions */}
+                {intakeQuestions.length > 0 && (
+                  <div>
+                    <div className="h-px my-4" style={{background:'rgba(255,255,255,0.08)'}} />
+                    <p className="text-sm font-semibold mb-3" style={{color:'rgba(255,255,255,0.7)'}}>A few quick questions</p>
+                    <div className="space-y-4">
+                      {intakeQuestions.map(q => (
+                        <div key={q.id}>
+                          <label className="block text-sm mb-1.5" style={{color:'rgba(255,255,255,0.6)'}}>
+                            {q.question}{q.required && <span style={{color:'#f87171'}}> *</span>}
+                          </label>
+                          <textarea value={intakeAnswers[q.id] || ''} onChange={e => setIntakeAnswers({...intakeAnswers, [q.id]: e.target.value})}
+                            rows={2} required={q.required}
+                            className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none resize-none"
+                            style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)'}} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {bookingError && (
                   <div className="rounded-xl px-4 py-3 text-sm" style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',color:'#fca5a5'}}>
                     {bookingError}

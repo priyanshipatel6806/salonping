@@ -11,6 +11,12 @@ const PROTECTED = [
   '/clients',
   '/customise',
   '/analytics',
+  '/calendar',
+  '/staff',
+  '/blocked',
+  '/waitlist',
+  '/loyalty',
+  '/intake',
 ]
 
 // Routes that logged-in users should not see (redirect to dashboard)
@@ -71,6 +77,18 @@ export const config = {
     '/customise/:path*',
     '/analytics/:path*',
     '/analytics',
+    '/calendar/:path*',
+    '/calendar',
+    '/staff/:path*',
+    '/staff',
+    '/blocked/:path*',
+    '/blocked',
+    '/waitlist/:path*',
+    '/waitlist',
+    '/loyalty/:path*',
+    '/loyalty',
+    '/intake/:path*',
+    '/intake',
     '/login',
   ],
 }
