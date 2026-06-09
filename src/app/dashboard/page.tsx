@@ -2,6 +2,8 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createServiceClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import NavBar from '@/components/NavBar'
+import type { Metadata } from 'next'
+export const metadata: Metadata = { title: 'Dashboard | SalonPing' }
 
 const GOLD = '#c9a84c'
 const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/staff|Staff','/hours|Hours','/blocked|Block-out','/waitlist|Waitlist','/loyalty|Loyalty','/customise|Customise','/settings|Settings']

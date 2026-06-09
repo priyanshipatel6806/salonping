@@ -1,9 +1,10 @@
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import NavBar from '@/components/NavBar'
+import type { Metadata } from 'next'
+export const metadata: Metadata = { title: 'Analytics | SalonPing' }
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
@@ -116,7 +117,7 @@ export default async function AnalyticsPage() {
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 140 }}>
               {monthlyRevenue.map((m, i) => (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
-                  <div style={{ fontSize: 10, color: GOLD, fontWeight: 700 }}>${m.revenue > 0 ? m.revenue : ''}</div>
+                  <div style={{ fontSize: 10, color: GOLD, fontWeight: 700 }}>{m.revenue > 0 ? `$${m.revenue}` : ''}</div>
                   <div style={{
                     width: '100%', borderRadius: '4px 4px 0 0',
                     height: `${Math.max((m.revenue / maxRevenue) * 110, m.revenue > 0 ? 4 : 0)}px`,

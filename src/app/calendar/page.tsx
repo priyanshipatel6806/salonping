@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8) // 8am–8pm
 const DAYS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
@@ -51,6 +50,7 @@ export default function CalendarPage() {
   const viewDays = view === 'week' ? weekDates : [anchor]
   const SLOT_HEIGHT = 56 // pixels per hour
 
+  useEffect(() => { document.title = 'Calendar | SalonPing' }, [])
   useEffect(() => { loadData() }, [anchor])
 
   async function loadData() {
