@@ -116,7 +116,7 @@ export default function ServicesPage() {
           <div style={{textAlign:'center', padding:60, color:'rgba(255,255,255,0.3)'}}>Loading...</div>
         ) : services.length === 0 ? (
           <div style={{textAlign:'center', padding:80, background:'rgba(255,255,255,0.02)', borderRadius:16, border:'1px dashed rgba(255,255,255,0.1)'}}>
-            <div style={{fontSize:40, marginBottom:16}}>&#9988;</div>
+            <div style={{fontSize:40, marginBottom:16}}>✅</div>
             <h3 style={{color:'#fff', margin:'0 0 8px', fontWeight:700}}>No services yet</h3>
             <p style={{color:'rgba(255,255,255,0.4)', fontSize:13}}>Add your first service to start accepting bookings</p>
           </div>
@@ -132,7 +132,7 @@ export default function ServicesPage() {
                         <div style={{fontWeight:700, color:'#fff', fontSize:15, marginBottom:4}}>{s.name}</div>
                         {s.description && <div style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:6}}>{s.description}</div>}
                         <div style={{display:'flex', gap:16}}>
-                          <span style={{fontSize:12, color:'rgba(255,255,255,0.4)'}}>&#9201; {s.duration_minutes} min</span>
+                          <span style={{fontSize:12, color:'rgba(255,255,255,0.4)'}}>⏱ {s.duration_minutes} min</span>
                           <span style={{fontSize:12, fontWeight:700, color:GOLD}}>${s.price} CAD</span>
                         </div>
                       </div>

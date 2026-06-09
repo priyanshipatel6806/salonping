@@ -8,6 +8,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [useOtp, setUseOtp] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [otpError, setOtpError] = useState('')
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -15,24 +19,78 @@ export default function LoginPage() {
     const supabase = createClient()
     await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        shouldCreateUser: true,
+      },
     })
     setSent(true)
     setLoading(false)
   }
 
+  async function handleOtpVerify(e: React.FormEvent) {
+    e.preventDefault()
+    setVerifying(true)
+    setOtpError('')
+    const supabase = createClient()
+    const { error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' })
+    if (error) {
+      setOtpError('Incorrect code. Please check your email and try again.')
+      setVerifying(false)
+    } else {
+      window.location.href = '/dashboard'
+    }
+  }
+
   if (sent) {
     return (
       <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-        <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 20, padding: '48px 40px', maxWidth: 400, width: '100%', textAlign: 'center' }}>
+        <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 20, padding: '40px 32px', maxWidth: 420, width: '100%', textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>📧</div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 10px' }}>Check your email</h2>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, margin: 0 }}>
-            We sent a magic link to<br />
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 6px' }}>{useOtp ? 'Enter your code' : 'Check your email'}</h2>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, margin: '0 0 20px' }}>
+            {useOtp ? 'Enter the 6-digit code we sent to' : 'We sent a secure sign-in link to'}<br />
             <span style={{ color: GOLD, fontWeight: 600 }}>{email}</span>
           </p>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 16 }}>Click the link to sign in — no password needed.</p>
-          <button onClick={() => setSent(false)} style={{ marginTop: 20, background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: 'rgba(255,255,255,0.4)', fontSize: 13, padding: '8px 18px', cursor: 'pointer' }}>← Try a different email</button>
+          {useOtp ? (
+            // OTP code entry
+            <form onSubmit={handleOtpVerify} style={{ marginTop: 20, textAlign: 'left' }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>6-digit code from your email</label>
+              <input
+                type="text"
+                value={otp}
+                onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="123456"
+                maxLength={6}
+                className="login-input"
+                style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '14px 16px', fontSize: 22, color: '#fff', outline: 'none', textAlign: 'center', letterSpacing: 8, boxSizing: 'border-box' as const }}
+              />
+              {otpError && <p style={{ fontSize: 12, color: '#f87171', marginTop: 8 }}>{otpError}</p>}
+              <button type="submit" disabled={otp.length !== 6 || verifying}
+                style={{ marginTop: 12, width: '100%', background: `linear-gradient(135deg,#2a1f08,${GOLD})`, color: '#0a0a0a', fontWeight: 800, fontSize: 14, padding: '13px', borderRadius: 12, border: 'none', cursor: 'pointer', opacity: otp.length !== 6 || verifying ? 0.5 : 1 }}>
+                {verifying ? 'Verifying…' : 'Sign in →'}
+              </button>
+            </form>
+          ) : (
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 12, lineHeight: 1.7 }}>
+              Click the link in the email to sign in. The link expires in <strong style={{ color: 'rgba(255,255,255,0.6)' }}>60 minutes</strong>.
+              <br />The email comes from <strong style={{ color: GOLD }}>no-reply@mail.app.supabase.io</strong> — this is safe and expected.
+            </p>
+          )}
+
+          <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {!useOtp && (
+              <button onClick={() => setUseOtp(true)} style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 10, color: GOLD, fontSize: 12, fontWeight: 600, padding: '7px 14px', cursor: 'pointer' }}>
+                Enter 6-digit code instead →
+              </button>
+            )}
+            {useOtp && (
+              <button onClick={() => { setUseOtp(false); setOtp(''); setOtpError('') }} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: 'rgba(255,255,255,0.4)', fontSize: 12, padding: '7px 14px', cursor: 'pointer' }}>
+                Use magic link instead
+              </button>
+            )}
+            <button onClick={() => { setSent(false); setUseOtp(false); setOtp('') }} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: 'rgba(255,255,255,0.35)', fontSize: 12, padding: '7px 14px', cursor: 'pointer' }}>← Different email</button>
+          </div>
         </div>
       </div>
     )

@@ -19,6 +19,7 @@ export default function CustomisePage() {
   const [gallery, setGallery] = useState<{id:string;url:string;caption:string}[]>([])
   const galleryRef = useRef<HTMLInputElement>(null)
   const [slugError, setSlugError] = useState('')
+  const [uploadError, setUploadError] = useState('')
   const [stripeConnected, setStripeConnected] = useState(false)
   const [stripeConnecting, setStripeConnecting] = useState(false)
   const logoRef = useRef<HTMLInputElement>(null)
@@ -100,20 +101,26 @@ export default function CustomisePage() {
   async function uploadPhoto(file: File, type: 'logo' | 'cover') {
     const setter = type === 'logo' ? setUploadingLogo : setUploadingCover
     setter(true)
+    setUploadError('')
     try {
       const supabase = createClient()
-      const ext = file.name.split('.').pop()
-      const path = `${salonId}/${type}.${ext}`
-      const { error } = await supabase.storage.from('salon-photos').upload(path, file, { upsert: true })
-      if (!error) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const path = `${salonId}/${type}-${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('salon-photos').upload(path, file, { upsert: true, contentType: file.type })
+      if (error) {
+        setUploadError(`Upload failed: ${error.message}. Check that "salon-photos" storage bucket exists in Supabase.`)
+      } else {
         const { data: urlData } = supabase.storage.from('salon-photos').getPublicUrl(path)
         setForm(f => ({ ...f, [type === 'logo' ? 'logo_url' : 'cover_photo_url']: urlData.publicUrl + '?t=' + Date.now() }))
+        setUploadError('')
       }
-    } catch {}
+    } catch (e: any) {
+      setUploadError(`Upload error: ${e?.message || 'Unknown error'}`)
+    }
     setter(false)
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://salonping-app.vercel.app')
   const inputStyle = { width:'100%', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'11px 14px', fontSize:14, color:'#fff', outline:'none', boxSizing:'border-box' as const }
   const cardStyle = { background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:24, marginBottom:16 }
 
@@ -186,6 +193,14 @@ export default function CustomisePage() {
                   </div>
                 ))}
               </div>
+              {uploadError && (
+                <div style={{marginTop:10, padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)', borderRadius:8, fontSize:12, color:'#f87171'}}>
+                  ⚠️ {uploadError}
+                  <div style={{marginTop:4, color:'rgba(255,255,255,0.4)', fontSize:11}}>
+                    To fix: Go to Supabase → Storage → Create bucket named <strong style={{color:'rgba(255,255,255,0.7)'}}>salon-photos</strong> → set to Public.
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Brand colour */}

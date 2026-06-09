@@ -59,7 +59,7 @@ export default async function DashboardPage() {
 
   const hour = now.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://salonping-app.vercel.app'
 
   // Onboarding checklist
   const hasServices = (services?.length || 0) > 0

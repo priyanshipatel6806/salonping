@@ -57,7 +57,7 @@ export default function HoursPage() {
           </div>
           <button onClick={handleSave} disabled={saving}
             style={{background:'linear-gradient(135deg,#2a1f08,#c9a84c)', color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'10px 22px', borderRadius:10, border:'none', cursor:'pointer', opacity: saving ? 0.7 : 1}}>
-            {saving ? 'Saving...' : saved ? '&#10003; Saved!' : 'Save Hours'}
+            {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Hours'}
           </button>
         </div>
 

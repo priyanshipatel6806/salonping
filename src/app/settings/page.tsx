@@ -49,7 +49,7 @@ function SettingsInner() {
   }
 
   const inputStyle = { width:'100%', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'12px 14px', fontSize:14, color:'#fff', outline:'none', boxSizing:'border-box' as const }
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://salonping-app.vercel.app')
 
   return (
     <div style={{background:'#0a0a0a', minHeight:'100vh', color:'#fff'}}>
