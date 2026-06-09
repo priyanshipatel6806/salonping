@@ -137,4 +137,11 @@ export default async function ClientsPage() {
                   {c.birthday && <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', background:'rgba(255,255,255,0.04)', borderRadius:8, padding:'4px 10px'}}>Birthday: {new Date(c.birthday + 'T12:00:00').toLocaleDateString('en-CA', {month:'long', day:'numeric'})}</div>}
                 </div>
               )}
-    
+            </div>
+          ))}
+        </div>
+        )}
+      </div>
+    </div>
+  )
+}
