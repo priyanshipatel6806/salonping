@@ -97,7 +97,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([])
-  const [form, setForm] = useState({ name:'', phone:'', email:'', reminder_channel:'sms' })
+  const [form, setForm] = useState({ name:'', phone:'', email:'', reminder_channel:'sms', notes:'' })
   const [intakeQuestions, setIntakeQuestions] = useState<{id:string;question:string;required:boolean}[]>([])
   const [intakeAnswers, setIntakeAnswers] = useState<Record<string,string>>({})
   const [booking, setBooking] = useState(false)
@@ -118,7 +118,8 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
       .eq('slug', slugVal).single()
     if (!settings) { setLoading(false); return }
     setSalon(settings)
-    setDepositAmount(settings.stripe_deposit_amount || 0)
+    // Only show deposit if Stripe is actually connected
+    setDepositAmount(settings.stripe_connected ? (settings.stripe_deposit_amount || 0) : 0)
     const { data: svcs } = await supabase.from('services').select('*')
       .eq('salon_id', settings.salon_id).eq('active', true).order('name')
     setServices(svcs || [])
@@ -252,7 +253,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ salon_id: salon.salon_id, client_name: form.name, client_phone: form.phone,
             client_email: form.email, service: selectedService.name, scheduled_at,
-            reminder_channel: form.reminder_channel, slug }),
+            reminder_channel: form.reminder_channel, notes: form.notes, slug }),
         })
         const data = await res.json()
         if (data.url) { window.location.href = data.url; return }
@@ -268,6 +269,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ salon_id:salon.salon_id, client_name:form.name, client_phone:form.phone,
           client_email:form.email, service:selectedService.name, scheduled_at, reminder_channel:form.reminder_channel,
+          notes: form.notes,
           intake_answers: intakeQuestions.length > 0 ? intakeQuestions.map(q => ({ question: q.question, answer: intakeAnswers[q.id] || '' })) : [] }),
       })
       const bookData = await bookResponse.json()
@@ -634,6 +636,19 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                     ))}
                   </div>
                 </div>
+                {/* Notes / special requests */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5" style={{color:'rgba(255,255,255,0.7)'}}>Notes / Special Requests <span style={{color:'rgba(255,255,255,0.3)', fontWeight:400}}>(optional)</span></label>
+                  <textarea
+                    value={form.notes}
+                    onChange={e => setForm({...form, notes: e.target.value})}
+                    placeholder="e.g. allergies, first-time visit, preferred stylist..."
+                    rows={3}
+                    className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none resize-none"
+                    style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)'}}
+                  />
+                </div>
+
                 {/* Intake questions */}
                 {intakeQuestions.length > 0 && (
                   <div>

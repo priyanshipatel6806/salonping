@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase'
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
+import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
 const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/blocked|Block-out','/customise|Customise','/settings|Settings']
@@ -111,7 +112,7 @@ export default function AppointmentsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>{d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Toronto' })}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{`${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2,'0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`}</div>
             </div>
             <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 100, background: style.bg, color: style.color, border: `1px solid ${style.border}` }}>{style.label}</span>
             {isPaid
@@ -127,7 +128,7 @@ export default function AppointmentsPage() {
             {isPastConfirmed && (
               <>
                 {!isPaid && <button onClick={() => setShowPaid(showPaid === apt.id ? null : apt.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', color: '#4ade80', cursor: 'pointer', fontWeight: 600 }}>Mark paid</button>}
-                <button onClick={() => handleNoShow(apt.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', cursor: 'pointer', fontWeight: 600 }}>No-show</button>
+                {!isPaid && <button onClick={() => handleNoShow(apt.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', cursor: 'pointer', fontWeight: 600 }}>No-show</button>}
               </>
             )}
           </div>
@@ -162,18 +163,7 @@ export default function AppointmentsPage() {
 
   return (
     <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff' }}>
-      <nav style={{ background: '#0a0a0a', borderBottom: '1px solid rgba(201,168,76,0.15)', position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: `linear-gradient(135deg,#2a1f08,${GOLD})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>✄</div>
-            <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>SalonPing</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            {NAV_LINKS.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: href === '/appointments' ? GOLD : 'rgba(255,255,255,0.5)', fontSize: 12, padding: '5px 10px', borderRadius: 8, textDecoration: 'none', fontWeight: href === '/appointments' ? 700 : 400, whiteSpace: 'nowrap' as const }}>{label}</a> })}
-            <a href="/appointments/new" style={{ marginLeft: 6, background: `linear-gradient(135deg,#2a1f08,${GOLD})`, color: '#0a0a0a', fontWeight: 700, fontSize: 12, padding: '7px 14px', borderRadius: 8, textDecoration: 'none' }}>+ New</a>
-          </div>
-        </div>
-      </nav>
+      <NavBar />
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>

@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createServiceClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
+import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
 const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/staff|Staff','/hours|Hours','/blocked|Block-out','/waitlist|Waitlist','/loyalty|Loyalty','/customise|Customise','/settings|Settings']
@@ -60,30 +61,27 @@ export default async function DashboardPage() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
+  // Onboarding checklist
+  const hasServices = (services?.length || 0) > 0
+  const hasHours = true // created on signup
+  const hasStripe = !!(await (async () => {
+    const { data } = await supabase.from('booking_settings').select('stripe_connected').eq('salon_id', salon?.id).single()
+    return data?.stripe_connected
+  })())
+  const hasSlug = bookingSettings?.slug && !bookingSettings.slug.startsWith('my-salon-')
+  const setupDone = hasServices && hasStripe && hasSlug
+  const setupSteps = [
+    { done: hasServices, label: 'Add your services', href: '/services' },
+    { done: true,        label: 'Set working hours', href: '/hours' },
+    { done: hasStripe,   label: 'Connect Stripe (for deposits)', href: '/settings' },
+    { done: !!hasSlug,   label: 'Customise your booking URL', href: '/customise' },
+  ]
+  const doneCount = setupSteps.filter(s => s.done).length
+
   return (
     <div style={{background:'#0a0a0a', minHeight:'100vh', color:'#fff'}}>
-      <style>{`@media(max-width:768px){.dash-stats{grid-template-columns:repeat(2,1fr)!important}.dash-main{grid-template-columns:1fr!important}.dash-nav-links{display:none!important}.dash-nav-mobile{display:flex!important}}`}</style>
-      <nav style={{background:'#0a0a0a', borderBottom:'1px solid rgba(201,168,76,0.15)', position:'sticky', top:0, zIndex:50}}>
-        <div style={{maxWidth:1200, margin:'0 auto', padding:'0 16px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-          <div style={{display:'flex', alignItems:'center', gap:8}}>
-            <div style={{width:30, height:30, borderRadius:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15}}>✄</div>
-            <span style={{fontWeight:800, fontSize:16, color:'#fff'}}>SalonPing</span>
-          </div>
-          <div className="dash-nav-links" style={{display:'flex', alignItems:'center', gap:2, flexWrap:'wrap'}}>
-            {NAV.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/dashboard' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:11, padding:'4px 8px', borderRadius:8, textDecoration:'none', fontWeight: href==='/dashboard' ? 700 : 400, whiteSpace:'nowrap' as const}}>{label}</a> })}
-            <a href="/appointments/new" style={{marginLeft:6, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:11, padding:'7px 12px', borderRadius:8, textDecoration:'none'}}>+ New</a>
-          </div>
-          <div className="dash-nav-mobile" style={{display:'none', gap:8}}>
-            <a href="/appointments/new" style={{background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 14px', borderRadius:8, textDecoration:'none'}}>+ New</a>
-            <details style={{position:'relative'}}>
-              <summary style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'8px 12px', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:18, listStyle:'none'}}>☰</summary>
-              <div style={{position:'absolute', right:0, top:'100%', marginTop:4, background:'#1a1a1a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:12, minWidth:180, zIndex:100, display:'flex', flexDirection:'column', gap:4}}>
-                {NAV.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/dashboard' ? GOLD : 'rgba(255,255,255,0.7)', fontSize:14, padding:'8px 10px', borderRadius:8, textDecoration:'none', display:'block'}}>{label}</a> })}
-              </div>
-            </details>
-          </div>
-        </div>
-      </nav>
+      <style>{`@media(max-width:768px){.dash-stats{grid-template-columns:repeat(2,1fr)!important}.dash-main{grid-template-columns:1fr!important}}`}</style>
+      <NavBar />
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:'24px 16px'}}>
         <div style={{marginBottom:20}}>
@@ -94,6 +92,29 @@ export default async function DashboardPage() {
             {now.toLocaleDateString('en-CA', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
           </p>
         </div>
+
+        {/* Onboarding checklist — hide once all done */}
+        {!setupDone && (
+          <div style={{background:'rgba(201,168,76,0.06)', border:'1px solid rgba(201,168,76,0.25)', borderRadius:16, padding:'18px 24px', marginBottom:20}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14}}>
+              <div>
+                <div style={{fontSize:14, fontWeight:700, color:GOLD}}>🚀 Finish setting up your salon</div>
+                <div style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginTop:2}}>{doneCount} of {setupSteps.length} steps complete</div>
+              </div>
+              <div style={{fontSize:11, color:'rgba(255,255,255,0.3)'}}>Disappears when done</div>
+            </div>
+            <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+              {setupSteps.map(s => (
+                <a key={s.href} href={s.href} style={{display:'flex', alignItems:'center', gap:7, padding:'8px 14px', borderRadius:10, textDecoration:'none',
+                  background: s.done ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.05)',
+                  border: s.done ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.1)'}}>
+                  <span style={{fontSize:13}}>{s.done ? '✅' : '⬜'}</span>
+                  <span style={{fontSize:12, fontWeight:600, color: s.done ? '#4ade80' : 'rgba(255,255,255,0.65)', textDecoration: s.done ? 'line-through' : 'none'}}>{s.label}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Stats grid */}
         <div className="dash-stats" style={{display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12, marginBottom:20}}>
@@ -117,7 +138,7 @@ export default async function DashboardPage() {
 
         <div className="dash-main" style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:16, marginBottom:16}}>
           {/* Today's appointments */}
-          <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, overflow:'hidden'}}>
+          <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, overflow:'hidden', transform:'translateZ(0)', willChange:'transform'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'18px 24px', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
               <div>
                 <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:0}}>{"Today's Schedule"}</h2>

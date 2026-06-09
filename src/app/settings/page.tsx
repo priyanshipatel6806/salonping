@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
 const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
@@ -52,18 +53,7 @@ function SettingsInner() {
 
   return (
     <div style={{background:'#0a0a0a', minHeight:'100vh', color:'#fff'}}>
-      <nav style={{background:'#0a0a0a', borderBottom:'1px solid rgba(201,168,76,0.15)', position:'sticky', top:0, zIndex:50}}>
-        <div style={{maxWidth:1100, margin:'0 auto', padding:'0 24px', height:60, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-          <div style={{display:'flex', alignItems:'center', gap:10}}>
-            <div style={{width:32, height:32, borderRadius:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>✄</div>
-            <span style={{fontWeight:800, fontSize:17, color:'#fff'}}>SalonPing</span>
-          </div>
-          <div style={{display:'flex', alignItems:'center', gap:2, overflowX:'auto', scrollbarWidth:'none' as const}}>
-            {NAV_LINKS.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/settings' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none', fontWeight: href==='/settings' ? 700 : 400, whiteSpace:'nowrap' as const}}>{label}</a> })}
-            <a href="/appointments/new" style={{marginLeft:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>+ New</a>
-          </div>
-        </div>
-      </nav>
+      <NavBar />
 
       <div style={{maxWidth:600, margin:'0 auto', padding:'40px 24px'}}>
         <h1 style={{fontSize:26, fontWeight:900, color:'#fff', margin:'0 0 4px', letterSpacing:'-0.5px'}}>Settings</h1>
@@ -120,8 +110,8 @@ function SettingsInner() {
               <a href="/api/stripe/connect" style={{padding:'8px 16px', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'rgba(255,255,255,0.5)', fontSize:12, fontWeight:600, textDecoration:'none'}}>Reconnect</a>
             </div>
           ) : (
-            <a href="/api/stripe/connect" style={{display:'inline-block', padding:'11px 22px', background:'linear-gradient(135deg,#4338ca,#6366f1)', color:'#fff', fontWeight:700, fontSize:13, borderRadius:10, textDecoration:'none'}}>
-              Connect with Stripe →
+            <a href="/api/stripe/connect" style={{display:'inline-block', padding:'11px 22px', background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, borderRadius:10, textDecoration:'none'}}>
+              🔗 Connect with Stripe →
             </a>
           )}
           {!stripeConnected && stripeStatus !== 'true' && (
@@ -163,12 +153,33 @@ function SettingsInner() {
         </div>
 
         {/* Sign out */}
-        <div style={{marginTop:24, padding:20, background:'rgba(239,68,68,0.05)', border:'1px solid rgba(239,68,68,0.15)', borderRadius:14}}>
-          <h3 style={{fontSize:14, fontWeight:700, color:'#f87171', margin:'0 0 8px'}}>Sign out</h3>
+        <div style={{marginTop:24, padding:20, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14}}>
+          <h3 style={{fontSize:14, fontWeight:700, color:'rgba(255,255,255,0.7)', margin:'0 0 8px'}}>Sign out</h3>
           <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14}}>Sign out of your SalonPing account</p>
           <button onClick={handleSignOut}
-            style={{padding:'9px 20px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:9, color:'#f87171', fontSize:13, fontWeight:600, cursor:'pointer'}}>
+            style={{padding:'9px 20px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:9, color:'rgba(255,255,255,0.6)', fontSize:13, fontWeight:600, cursor:'pointer'}}>
             Sign out
+          </button>
+        </div>
+
+        {/* Danger zone */}
+        <div style={{marginTop:16, padding:20, background:'rgba(239,68,68,0.04)', border:'1px solid rgba(239,68,68,0.15)', borderRadius:14}}>
+          <h3 style={{fontSize:14, fontWeight:700, color:'#f87171', margin:'0 0 6px'}}>⚠️ Danger Zone</h3>
+          <p style={{fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:14, lineHeight:1.6}}>
+            Permanently delete your account and all associated data — salons, services, clients, appointments. This cannot be undone.
+          </p>
+          <button
+            onClick={() => {
+              if (confirm('Are you sure you want to delete your account? This will permanently erase all your data and cannot be undone.')) {
+                if (confirm('Last chance — delete everything?')) {
+                  fetch('/api/account/delete', { method: 'DELETE' })
+                    .then(() => { window.location.href = '/' })
+                    .catch(() => alert('Failed to delete account. Please contact support@salonping.com'))
+                }
+              }
+            }}
+            style={{padding:'9px 20px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:9, color:'#f87171', fontSize:13, fontWeight:600, cursor:'pointer'}}>
+            Delete my account
           </button>
         </div>
       </div>

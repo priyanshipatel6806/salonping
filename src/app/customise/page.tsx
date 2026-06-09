@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
+import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
 const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
@@ -118,18 +119,7 @@ export default function CustomisePage() {
 
   return (
     <div style={{background:'#0a0a0a', minHeight:'100vh', color:'#fff'}}>
-      <nav style={{background:'#0a0a0a', borderBottom:'1px solid rgba(201,168,76,0.15)', position:'sticky', top:0, zIndex:50}}>
-        <div style={{maxWidth:1100, margin:'0 auto', padding:'0 24px', height:60, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-          <div style={{display:'flex', alignItems:'center', gap:10}}>
-            <div style={{width:32, height:32, borderRadius:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16}}>✄</div>
-            <span style={{fontWeight:800, fontSize:17, color:'#fff'}}>SalonPing</span>
-          </div>
-          <div style={{display:'flex', alignItems:'center', gap:2, overflowX:'auto', scrollbarWidth:'none' as const, msOverflowStyle:'none' as const}}>
-            {NAV.map(l => { const [href,label] = l.split('|'); return <a key={href} href={href} style={{color: href==='/customise' ? GOLD : 'rgba(255,255,255,0.5)', fontSize:13, padding:'6px 12px', borderRadius:8, textDecoration:'none', fontWeight: href==='/customise' ? 700 : 400, whiteSpace:'nowrap' as const}}>{label}</a> })}
-            <a href="/appointments/new" style={{marginLeft:8, background:`linear-gradient(135deg,#2a1f08,${GOLD})`, color:'#0a0a0a', fontWeight:700, fontSize:13, padding:'8px 16px', borderRadius:8, textDecoration:'none'}}>+ New</a>
-          </div>
-        </div>
-      </nav>
+      <NavBar />
 
       <div style={{maxWidth:760, margin:'0 auto', padding:'40px 24px'}}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:28}}>
