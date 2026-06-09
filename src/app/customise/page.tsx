@@ -111,7 +111,11 @@ export default function CustomisePage() {
         setUploadError(`Upload failed: ${error.message}. Check that "salon-photos" storage bucket exists in Supabase.`)
       } else {
         const { data: urlData } = supabase.storage.from('salon-photos').getPublicUrl(path)
-        setForm(f => ({ ...f, [type === 'logo' ? 'logo_url' : 'cover_photo_url']: urlData.publicUrl + '?t=' + Date.now() }))
+        const publicUrl = urlData.publicUrl + '?t=' + Date.now()
+        const field = type === 'logo' ? 'logo_url' : 'cover_photo_url'
+        setForm(f => ({ ...f, [field]: publicUrl }))
+        // Auto-save to DB immediately so Preview always shows the latest image
+        await supabase.from('booking_settings').update({ [field]: publicUrl }).eq('salon_id', salonId)
         setUploadError('')
       }
     } catch (e: any) {
