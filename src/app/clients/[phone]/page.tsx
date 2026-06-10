@@ -1,9 +1,11 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
+import NavBar from '@/components/NavBar'
+import type { Metadata } from 'next'
+export const metadata: Metadata = { title: 'Client Profile | SalonPing' }
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/staff|Staff','/hours|Hours','/blocked|Block-out','/waitlist|Waitlist','/loyalty|Loyalty','/customise|Customise','/settings|Settings']
 
 export default async function ClientProfilePage({ params }: { params: Promise<{ phone: string }> }) {
   const { phone: rawPhone } = await params
@@ -51,19 +53,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
 
   return (
     <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff' }}>
-      {/* NAV */}
-      <nav style={{ background: '#0a0a0a', borderBottom: '1px solid rgba(201,168,76,0.15)', position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg,#2a1f08,${GOLD})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>✄</div>
-            <span style={{ fontWeight: 800, fontSize: 17, color: '#fff' }}>SalonPing</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2, overflowX: 'auto', scrollbarWidth: 'none' as const }}>
-            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: href === '/clients' ? GOLD : 'rgba(255,255,255,0.5)', fontSize: 13, padding: '6px 12px', borderRadius: 8, textDecoration: 'none', fontWeight: href === '/clients' ? 700 : 400, whiteSpace: 'nowrap' as const }}>{label}</a> })}
-            <a href="/appointments/new" style={{ marginLeft: 8, background: `linear-gradient(135deg,#2a1f08,${GOLD})`, color: '#0a0a0a', fontWeight: 700, fontSize: 13, padding: '8px 16px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>+ New</a>
-          </div>
-        </div>
-      </nav>
+      <NavBar />
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px' }}>
         {/* Back link */}

@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 const COLORS = ['#c9a84c','#2563eb','#7c3aed','#db2777','#dc2626','#ea580c','#16a34a','#0891b2','#374151','#000000']
 
 export default function CustomisePage() {
@@ -29,6 +28,8 @@ export default function CustomisePage() {
     google_review_link: '', logo_url: '', cover_photo_url: '', custom_slug: '',
     stripe_deposit_amount: 0,
   })
+
+  useEffect(() => { document.title = 'Customise | SalonPing' }, [])
 
   useEffect(() => { loadSettings() }, [])
 
@@ -73,10 +74,9 @@ export default function CustomisePage() {
       setSlugError('Slug can only contain lowercase letters, numbers, and hyphens')
       return
     }
+    if (!salonId) { console.error('No salonId — not saving'); return }
     setSaving(true)
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user?.id).single()
     const updateData: any = {
       headline: form.headline,
       description: form.description,
@@ -90,10 +90,11 @@ export default function CustomisePage() {
       const { data: existing } = await supabase.from('booking_settings').select('id').eq('slug', form.custom_slug).single()
       if (existing) { setSlugError('This URL is already taken. Try a different one.'); setSaving(false); return }
       updateData.slug = form.custom_slug
-      setSlug(form.custom_slug)
     }
-    const { error: saveError } = await supabase.from('booking_settings').update(updateData).eq('salon_id', salon?.id)
-    if (saveError) console.error('Save error:', saveError)
+    const { error: saveError } = await supabase.from('booking_settings').update(updateData).eq('salon_id', salonId)
+    if (saveError) { console.error('Save error:', saveError); setSaving(false); return }
+    // Only update slug state after confirmed DB success
+    if (updateData.slug) setSlug(updateData.slug)
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
@@ -106,11 +107,11 @@ export default function CustomisePage() {
       const supabase = createClient()
       const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
       const path = `${salonId}/${type}-${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('salon-photos').upload(path, file, { upsert: true, contentType: file.type })
+      const { error } = await supabase.storage.from('salon-assets').upload(path, file, { upsert: true, contentType: file.type })
       if (error) {
-        setUploadError(`Upload failed: ${error.message}. Check that "salon-photos" storage bucket exists in Supabase.`)
+        setUploadError(`Upload failed: ${error.message}. Check that "salon-assets" storage bucket exists in Supabase.`)
       } else {
-        const { data: urlData } = supabase.storage.from('salon-photos').getPublicUrl(path)
+        const { data: urlData } = supabase.storage.from('salon-assets').getPublicUrl(path)
         const publicUrl = urlData.publicUrl + '?t=' + Date.now()
         const field = type === 'logo' ? 'logo_url' : 'cover_photo_url'
         setForm(f => ({ ...f, [field]: publicUrl }))
@@ -201,7 +202,7 @@ export default function CustomisePage() {
                 <div style={{marginTop:10, padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.25)', borderRadius:8, fontSize:12, color:'#f87171'}}>
                   ⚠️ {uploadError}
                   <div style={{marginTop:4, color:'rgba(255,255,255,0.4)', fontSize:11}}>
-                    To fix: Go to Supabase → Storage → Create bucket named <strong style={{color:'rgba(255,255,255,0.7)'}}>salon-photos</strong> → set to Public.
+                    To fix: Go to Supabase → Storage → Create bucket named <strong style={{color:'rgba(255,255,255,0.7)'}}>salon-assets</strong> → set to Public.
                   </div>
                 </div>
               )}
@@ -379,5 +380,10 @@ export default function CustomisePage() {
         )}
       </div>
     </div>
+  )
+}iv>
+  )
+}
+iv>
   )
 }

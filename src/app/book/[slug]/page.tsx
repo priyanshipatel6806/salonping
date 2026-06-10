@@ -408,7 +408,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
           ? <img src={coverUrl} alt="Salon cover" className="absolute inset-0 w-full h-full object-cover" />
           : <div className="absolute inset-0" style={{background:`linear-gradient(135deg,#0a0a0a 0%,#1a1205 40%,${accentColor}22 100%)`}} />
         }
-        <div className="absolute inset-0" style={{background:'linear-gradient(to bottom,rgba(0,0,0,0.3) 0%,rgba(10,10,10,0.85) 100%)'}} />
+        <div className="absolute inset-0" style={{background:'linear-gradient(to bottom,rgba(0,0,0,0.15) 0%,rgba(10,10,10,0.6) 100%)'}} />
         <div className="absolute top-0 inset-x-0 h-px" style={{background:`linear-gradient(to right,transparent,${GOLD},transparent)`}} />
         <div className="relative z-10 max-w-2xl mx-auto px-6 py-8 flex items-end gap-5" style={{minHeight:200}}>
           <div className="animate-pulse-gold rounded-2xl flex items-center justify-center text-xl font-bold flex-shrink-0 overflow-hidden"

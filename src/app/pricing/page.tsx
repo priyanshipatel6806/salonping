@@ -59,6 +59,7 @@ export default function PricingPage() {
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <Link href="/#features" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, textDecoration: 'none' }}>Features</Link>
+            <Link href="/#how-it-works" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, textDecoration: 'none' }}>How it works</Link>
             <Link href="/pricing" style={{ color: GOLD, fontSize: 14, textDecoration: 'none', fontWeight: 600 }}>Pricing</Link>
             <Link href="/login" style={{ background: `linear-gradient(135deg,#2a1f08,${GOLD})`, color: '#0a0a0a', fontWeight: 700, fontSize: 14, padding: '10px 20px', borderRadius: 10, textDecoration: 'none' }}>
               Get started free

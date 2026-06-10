@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/staff|Staff','/hours|Hours','/blocked|Block-out','/waitlist|Waitlist','/loyalty|Loyalty','/customise|Customise','/settings|Settings']
 
 type WaitlistEntry = { id: string; client_name: string; client_phone: string; client_email: string; service: string; preferred_date: string | null; reminder_channel: string; notified: boolean; created_at: string }
 
@@ -12,6 +11,8 @@ export default function WaitlistPage() {
   const [entries, setEntries] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [notifying, setNotifying] = useState<string | null>(null)
+
+  useEffect(() => { document.title = 'Waitlist | SalonPing' }, [])
 
   useEffect(() => { loadEntries() }, [])
 

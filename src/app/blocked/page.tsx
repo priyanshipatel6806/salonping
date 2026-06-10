@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/blocked|Block-out','/customise|Customise','/settings|Settings']
 
 type BlockedTime = { id: string; label: string; start_date: string; end_date: string; start_time: string | null; end_time: string | null; repeat_weekly: boolean }
 
@@ -14,6 +13,8 @@ export default function BlockedPage() {
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ label: '', start_date: '', end_date: '', start_time: '', end_time: '', repeat_weekly: false, type: 'fullday' as 'fullday' | 'timerange' })
+
+  useEffect(() => { document.title = 'Block-out Times | SalonPing' }, [])
 
   useEffect(() => { loadBlocks() }, [])
 

@@ -6,7 +6,6 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Clients | SalonPing' }
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/staff|Staff','/hours|Hours','/blocked|Block-out','/waitlist|Waitlist','/loyalty|Loyalty','/customise|Customise','/settings|Settings']
 
 export default async function ClientsPage() {
   const supabase = await createServerSupabaseClient()

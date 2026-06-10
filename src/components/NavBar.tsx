@@ -14,6 +14,7 @@ const ALL_NAV = [
   '/staff|Staff',
   '/hours|Hours',
   '/blocked|Block-out',
+  '/intake|Intake Forms',
   '/waitlist|Waitlist',
   '/loyalty|Loyalty',
   '/customise|Customise',

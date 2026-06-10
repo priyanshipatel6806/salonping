@@ -2,9 +2,9 @@
 import { createClient } from '@/lib/supabase'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 type Apt = { id: string; client_name: string; client_phone: string; client_email: string; service: string; scheduled_at: string; reminder_channel: string; notes: string }
 type Service = { id: string; name: string; price: number; duration_minutes: number }
@@ -62,17 +62,7 @@ export default function ReschedulePage({ params }: { params: Promise<{ id: strin
 
   return (
     <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff' }}>
-      <nav style={{ background: '#0a0a0a', borderBottom: '1px solid rgba(201,168,76,0.15)', position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: `linear-gradient(135deg,#2a1f08,${GOLD})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>✄</div>
-            <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>SalonPing</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            {NAV.map(l => { const [href, label] = l.split('|'); return <a key={href} href={href} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, padding: '5px 10px', borderRadius: 8, textDecoration: 'none' }}>{label}</a> })}
-          </div>
-        </div>
-      </nav>
+      <NavBar />
 
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '32px 16px' }}>
         <div style={{ marginBottom: 24 }}>

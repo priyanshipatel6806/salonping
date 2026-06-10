@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
-const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 function SettingsInner() {
   const [loading, setLoading] = useState(false)
@@ -14,6 +13,8 @@ function SettingsInner() {
   const [stripeConnected, setStripeConnected] = useState(false)
   const [stripeAccountId, setStripeAccountId] = useState('')
   const searchParams = useSearchParams()
+
+  useEffect(() => { document.title = 'Settings | SalonPing' }, [])
 
   useEffect(() => {
     async function load() {

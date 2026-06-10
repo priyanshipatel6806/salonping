@@ -131,8 +131,8 @@ export default function AppointmentsPage() {
 
   async function handleMarkPaid(id: string) {
     const supabase = createClient()
-    await supabase.from('appointments').update({ payment_status: 'paid', payment_method: payMethod, tip_amount: parseInt(tipInput || '0') }).eq('id', id)
-    setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_status: 'paid', payment_method: payMethod, tip_amount: parseInt(tipInput || '0') } : a))
+    await supabase.from('appointments').update({ payment_status: 'paid', payment_method: payMethod, tip_amount: parseFloat(tipInput || '0') }).eq('id', id)
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_status: 'paid', payment_method: payMethod, tip_amount: parseFloat(tipInput || '0') } : a))
     setShowPaid(null); setTipInput(''); setPayMethod('cash')
   }
 

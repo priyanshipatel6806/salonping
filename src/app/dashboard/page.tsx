@@ -6,7 +6,6 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Dashboard | SalonPing' }
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/staff|Staff','/hours|Hours','/blocked|Block-out','/waitlist|Waitlist','/loyalty|Loyalty','/customise|Customise','/settings|Settings']
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient()
@@ -61,7 +60,7 @@ export default async function DashboardPage() {
 
   const hour = now.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://salonping-app.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://salonping.vercel.app'
 
   // Onboarding checklist
   const hasServices = (services?.length || 0) > 0
@@ -140,7 +139,7 @@ export default async function DashboardPage() {
 
         <div className="dash-main" style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:16, marginBottom:16}}>
           {/* Today's appointments */}
-          <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, overflow:'hidden', transform:'translateZ(0)', willChange:'transform'}}>
+          <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, overflow:'hidden'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'18px 24px', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
               <div>
                 <h2 style={{fontSize:15, fontWeight:700, color:'#fff', margin:0}}>{"Today's Schedule"}</h2>

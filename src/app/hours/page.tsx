@@ -5,7 +5,6 @@ import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
-const NAV_LINKS = ['/dashboard|Dashboard','/appointments|Appointments','/clients|Clients','/analytics|Analytics','/services|Services','/hours|Hours','/customise|Customise','/settings|Settings']
 
 type DayHours = { day_of_week: number; is_open: boolean; start_time: string; end_time: string }
 
@@ -14,6 +13,8 @@ export default function HoursPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => { document.title = 'Working Hours | SalonPing' }, [])
 
   useEffect(() => { loadHours() }, [])
 

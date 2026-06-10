@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase'
 import NavBar from '@/components/NavBar'
 
 const GOLD = '#c9a84c'
-const NAV = ['/dashboard|Dashboard','/appointments|Appointments','/calendar|Calendar','/clients|Clients','/analytics|Analytics','/services|Services','/staff|Staff','/hours|Hours','/blocked|Block-out','/customise|Customise','/settings|Settings']
 const COLORS = ['#c9a84c','#3b82f6','#8b5cf6','#ec4899','#10b981','#f97316','#ef4444','#06b6d4','#84cc16','#f59e0b']
 
 type StaffMember = { id: string; name: string; role: string; phone: string; email: string; color: string; active: boolean }
@@ -17,6 +16,8 @@ export default function StaffPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [stats, setStats] = useState<Record<string, { count: number; revenue: number }>>({})
   const [form, setForm] = useState({ name: '', role: 'Stylist', phone: '', email: '', color: COLORS[0] })
+
+  useEffect(() => { document.title = 'Staff | SalonPing' }, [])
 
   useEffect(() => { loadStaff() }, [])
 
