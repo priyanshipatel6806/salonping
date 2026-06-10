@@ -254,13 +254,9 @@ export default function PricingPage() {
           <a href="/terms" style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>Terms of Service</a>
         </div>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', margin: 0 }}>
-               © {new Date().getFullYear()} SalonPing. All rights reserved.
+          &copy; {new Date().getFullYear()} SalonPing. Built for salon owners who value their time.
         </p>
       </footer>
-    </div>
-  )
-}
-oter>
     </div>
   )
 }
