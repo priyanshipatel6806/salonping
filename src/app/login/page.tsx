@@ -55,6 +55,10 @@ export default function LoginPage() {
           {useOtp ? (
             // OTP code entry
             <form onSubmit={handleOtpVerify} style={{ marginTop: 20, textAlign: 'left' }}>
+              <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+                Open the email we sent to <strong style={{ color: '#c9a84c' }}>{email}</strong> and look for a <strong style={{ color: '#fff' }}>6-digit number</strong> (e.g. 482916). Enter it below.
+                <br /><span style={{ color: 'rgba(255,255,255,0.35)' }}>The code expires in 60 minutes. Check your spam folder if you don&#39;t see it.</span>
+              </div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>6-digit code from your email</label>
               <input
                 type="text"
