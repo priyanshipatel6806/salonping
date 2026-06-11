@@ -57,28 +57,28 @@ function LoginPageContent() {
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>📧</div>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 6px' }}>{useOtp ? 'Enter your code' : 'Check your email'}</h2>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, margin: '0 0 20px' }}>
-            {useOtp ? 'Enter the 6-digit code we sent to' : 'We sent a secure sign-in link to'}<br />
+            {useOtp ? 'Enter the code we sent to' : 'We sent a secure sign-in link to'}<br />
             <span style={{ color: GOLD, fontWeight: 600 }}>{email}</span>
           </p>
           {useOtp ? (
             // OTP code entry
             <form onSubmit={handleOtpVerify} style={{ marginTop: 20, textAlign: 'left' }}>
               <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-                Open the email we sent to <strong style={{ color: '#c9a84c' }}>{email}</strong> and look for a <strong style={{ color: '#fff' }}>6-digit number</strong> (e.g. 482916). Enter it below.
+                Open the email we sent to <strong style={{ color: '#c9a84c' }}>{email}</strong> and look for the <strong style={{ color: '#fff' }}>number code</strong> in the email. Enter it below.
                 <br /><span style={{ color: 'rgba(255,255,255,0.35)' }}>The code expires in 60 minutes. Check your spam folder if you don&#39;t see it.</span>
               </div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>6-digit code from your email</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>Code from your email</label>
               <input
                 type="text"
                 value={otp}
-                onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="123456"
-                maxLength={6}
+                onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                placeholder="12345678"
+                maxLength={8}
                 className="login-input"
                 style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '14px 16px', fontSize: 22, color: '#fff', outline: 'none', textAlign: 'center', letterSpacing: 8, boxSizing: 'border-box' as const }}
               />
               {otpError && <p style={{ fontSize: 12, color: '#f87171', marginTop: 8 }}>{otpError}</p>}
-              <button type="submit" disabled={otp.length !== 6 || verifying}
+              <button type="submit" disabled={otp.length < 6 || verifying}
                 style={{ marginTop: 12, width: '100%', background: `linear-gradient(135deg,#2a1f08,${GOLD})`, color: '#0a0a0a', fontWeight: 800, fontSize: 14, padding: '13px', borderRadius: 12, border: 'none', cursor: 'pointer', opacity: otp.length !== 6 || verifying ? 0.5 : 1 }}>
                 {verifying ? 'Verifying…' : 'Sign in →'}
               </button>
