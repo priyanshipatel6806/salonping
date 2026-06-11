@@ -25,10 +25,18 @@ export async function GET(request: NextRequest) {
         },
       }
     )
-    await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      // Code exchange failed — redirect to login with error message
+      const loginUrl = new URL('/login', origin)
+      loginUrl.searchParams.set('error', 'Link expired or already used. Please request a new one.')
+      return NextResponse.redirect(loginUrl)
+    }
+    // Success — go to dashboard (or originally requested page)
+    const redirectTo = next.startsWith('/') ? `${origin}${next}` : `${origin}/dashboard`
+    return NextResponse.redirect(redirectTo)
   }
 
-  // Redirect to the page they originally tried to visit, or dashboard
-  const redirectTo = next.startsWith('/') ? `${origin}${next}` : `${origin}/dashboard`
-  return NextResponse.redirect(redirectTo)
+  // No code in URL — redirect to login
+  return NextResponse.redirect(new URL('/login', origin))
 }

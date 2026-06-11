@@ -1,6 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useSearchParams } from 'next/navigation'
 
 const GOLD = '#c9a84c'
 
@@ -12,6 +13,13 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [otpError, setOtpError] = useState('')
+  const [linkError, setLinkError] = useState('')
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const err = searchParams.get('error')
+    if (err) setLinkError(err)
+  }, [searchParams])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -137,6 +145,11 @@ export default function LoginPage() {
             <span style={{ fontWeight: 800, fontSize: 18, color: '#fff' }}>SalonPing</span>
           </div>
 
+          {linkError && (
+            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#fca5a5' }}>
+              ⚠ {linkError}
+            </div>
+          )}
           <h2 style={{ fontSize: 26, fontWeight: 900, color: '#fff', margin: '0 0 6px', letterSpacing: '-0.5px' }}>Welcome 👋</h2>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', margin: '0 0 28px' }}>
             Sign in or create your free account — no password needed.
