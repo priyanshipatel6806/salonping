@@ -22,8 +22,24 @@ export default function HoursPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     const { data: salon } = await supabase.from('salons').select('id').eq('owner_id', user?.id).single()
-    const { data } = await supabase.from('working_hours').select('*').eq('salon_id', salon?.id).order('day_of_week')
-    setHours(data || [])
+    if (!salon) { setLoading(false); return }
+
+    const { data } = await supabase.from('working_hours').select('*').eq('salon_id', salon.id).order('day_of_week')
+
+    if (data && data.length > 0) {
+      setHours(data)
+    } else {
+      // No hours exist yet — insert defaults (Mon–Sat open 9–6, Sun closed)
+      const defaults = [0,1,2,3,4,5,6].map(day => ({
+        salon_id: salon.id,
+        day_of_week: day,
+        is_open: day >= 1 && day <= 6,
+        start_time: '09:00',
+        end_time: '18:00',
+      }))
+      await supabase.from('working_hours').insert(defaults)
+      setHours(defaults)
+    }
     setLoading(false)
   }
 
